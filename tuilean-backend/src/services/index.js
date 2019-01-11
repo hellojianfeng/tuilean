@@ -8,7 +8,6 @@ const types = require('./types/types.service.js');
 const goOperation = require('./go-operation/go-operation.service.js');
 const notifications = require('./notifications/notifications.service.js');
 const channels = require('./channels/channels.service.js');
-const goPage = require('./go-page/go-page.service.js');
 const notifier = require('./notifier/notifier.service.js');
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
@@ -22,6 +21,5 @@ module.exports = function (app) {
   app.configure(goOperation);
   app.configure(notifications);
   app.configure(channels);
-  app.configure(goPage);
   app.configure(notifier);
 };
