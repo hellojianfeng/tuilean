@@ -2,8 +2,71 @@
 // For more information on hooks see: http://docs.feathersjs.com/api/hooks.html
 
 // eslint-disable-next-line no-unused-vars
+const fs = require('fs');
 module.exports = function (options = {}) {
   return async context => {
+    const contextParser = require('../utils/js/context-parser')(context,options);
+    const { current_operation, everyone_role_operations, everyone_permission_operations, user_operations, user_follow_operations } = await contextParser.parse();
+
+    if (current_operation){
+      let isAllowOperation = false;
+      everyone_permission_operations.map ( o => {
+        if ( o._id.equals(current_operation._id)){
+          isAllowOperation = true;
+        }
+      });
+
+      everyone_role_operations.map ( o => {
+        if ( o._id.equals(current_operation._id)){
+          isAllowOperation = true;
+        }
+      });
+
+      user_operations.map ( o => {
+        if (current_operation._id.equals(o._id)){
+          isAllowOperation = true;
+        }
+      });
+
+      for (const followOperation of user_follow_operations){
+        if (followOperation._id.equals(current_operation._id)){
+          isAllowOperation = true;
+        }
+      }
+
+      if(isAllowOperation === false){
+        throw new Error('user is not allowed to run operation! operation = ' + current_operation.path);
+      }
+
+      context.params.operation = current_operation;
+      const operationPath = current_operation.path;
+      const operationApp = current_operation.app || 'default';
+      if (fs.existsSync('src/operations/'+ operationApp + '/' +operationPath + '/data.json'))
+      {
+        const jsonData = require('../operations/default/'+ current_operation.path+'/data.json');
+        context.params.configuration.operation = jsonData;
+      }
+      if (fs.existsSync('src/operations/' + operationApp + '/' + operationPath + '/do.js'))
+      {
+        const doOperation = require('../operations/default/' + operationPath + '/do.js');
+        const doResult = await doOperation(context,options);
+        //if not show doOperation result, should add record operation
+        if (!context.result){
+          context.data.result = doResult;
+          context.data.operation = {
+            oid: current_operation._id,
+            path: current_operation.path,
+            org_id: current_operation.org_id,
+            org_path: current_operation.org_path
+          },
+          context.data.user = {oid: context.params.user._id, email: context.params.user.email};
+        }
+      } else {
+        throw new Error('not find do.js for operation of '+ operationPath );
+      }
+    } else {
+      throw new Error('not find valid operation!');
+    }
     return context;
   };
 };

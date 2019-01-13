@@ -2,6 +2,8 @@ const { authenticate } = require('@feathersjs/authentication').hooks;
 
 const beforeCreateOrg = require('../../hooks/before-create-org');
 
+const afterCreateOrg = require('../../hooks/after-create-org');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
@@ -17,7 +19,7 @@ module.exports = {
     all: [],
     find: [],
     get: [],
-    create: [],
+    create: [afterCreateOrg()],
     update: [],
     patch: [],
     remove: []

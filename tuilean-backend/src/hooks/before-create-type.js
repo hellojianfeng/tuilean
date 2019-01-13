@@ -6,7 +6,7 @@
  * tasks:
  * 1. if not provide path and only provide name, set path = name, vice verse
  */
-module.exports = function (options = {}) {
+module.exports = function () {
   return async context => {
 
     if (context.data.name && ! context.data.path){
@@ -16,7 +16,7 @@ module.exports = function (options = {}) {
     if (context.data.path && ! context.data.name){
       context.data.name = context.data.path;
     }
-    
+
     return context;
   };
 };

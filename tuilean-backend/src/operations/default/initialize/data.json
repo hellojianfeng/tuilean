@@ -1,0 +1,76 @@
+{
+  "orgs":{
+    "types":{
+      "company":{
+        "operations":{
+          "org-profile-management":{
+            "name":"org-profile-management",
+            "roles":["admin"]
+          },
+          "org-operation-management":{
+            "name":"org-operation-management",
+            "roles":["admin"]
+          },
+          "org-user-management":{
+            "name":"org-user-management",
+            "roles":["admin"]
+          }
+        },
+        "permissions":{
+          "employee":{
+            "name":"employee",
+            "description":"employee permission in org"
+          },
+          "customer":{
+            "name":"customer",
+            "description":"customer permission in org"
+          },
+          "public": {
+            "name":"public",
+            "description":"public permission in org"
+          }
+        },
+        "roles": {
+          "employee":{
+            "name":"employee",
+            "permissions":["employee"],
+            "operations":[],
+            "description":"employee role"
+          },
+          "customer":{
+            "name":"customer",
+            "permissions": ["customer"],
+            "description":"customer role"
+          },
+          "public":{
+            "name":"public",
+            "permissions":["public"],
+            "description":"public role in org"
+          }
+        },
+        "orgs":{
+          "department.system":{
+            "name":"system department",
+            "path":"system",
+            "type":"company.department.system"
+          }
+        },
+        "follows":{
+          "$all_children": {
+            "tags": ["children"],
+            "roles": ["everyone"],
+            "permissions":["followone"]
+          },
+          "$all_ancestors": {
+            "tags": ["ancestor"],
+            "roles": ["everyone"],
+            "permissions":["followone"]
+          }
+        }
+      },
+      "company.clean":{},
+      "department":{},
+      "department.company":{}
+    }
+  }
+}

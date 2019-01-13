@@ -1,11 +1,13 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 
+const beforeCreatePage = require('../../hooks/before-create-page');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
     find: [],
     get: [],
-    create: [],
+    create: [beforeCreatePage()],
     update: [],
     patch: [],
     remove: []
