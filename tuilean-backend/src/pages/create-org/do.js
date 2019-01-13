@@ -2,27 +2,22 @@
 /**
 
  */
+const buildResult = require('../../utils/js/build-page-result');
 module.exports = async function (context) {
 
   const pageData = context.data.data;
-  const pageName = context.data.page || context.data.name;
-  const action = context.data.action || 'start';
+  const action = context.data.action || 'open';
 
-  const orgTypeService = context.app.service('org-types');
+  const typeService = context.app.service('types');
   const orgService = context.app.service('orgs');
 
-  if (action === 'start'){
-    const findResult = await orgTypeService.find();
-    context.result = {
-      page: pageName,
-      action,
-      data: {
-        types: findResult.data
-      }
-    };
+  if (action === 'open'){
+    const types = await typeService.find({query:{owner:'orgs'}});
+    context.result = await buildResult(context,{ types });
+    return context;
   }
 
-  if (action === 'before-create-summary'){
+  if (action === 'summary-before-create'){
     if(!pageData){
       throw new Error('please provide org data to create!');
     }
@@ -33,13 +28,8 @@ module.exports = async function (context) {
       throw new Error('org type is required!');
     }
 
-    context.result = {
-      page: pageName,
-      action,
-      data: {
-        create_data: pageData
-      }
-    };
+    context.result = await buildResult(context,{ create_data: pageData });
+    return context;
   }
 
   if (action === 'create'){
@@ -54,11 +44,9 @@ module.exports = async function (context) {
       throw new Error('org type is required!');
     }
 
-    const createResult = await orgService.create(pageData, context.params);
+    return await orgService.create(pageData, context.params);
 
-    context.data.data = {
-      create_result: createResult
-    };
+    //return await buildResult(context,{ created: createResult });
   }
 
   return context;

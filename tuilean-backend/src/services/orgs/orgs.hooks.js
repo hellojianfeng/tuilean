@@ -4,12 +4,14 @@ const beforeCreateOrg = require('../../hooks/before-create-org');
 
 const afterCreateOrg = require('../../hooks/after-create-org');
 
+const addNamePath = require('../../hooks/add-name-path');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
     find: [],
     get: [],
-    create: [beforeCreateOrg()],
+    create: [addNamePath(),beforeCreateOrg()],
     update: [],
     patch: [],
     remove: []

@@ -21,19 +21,12 @@ module.exports = function () {
     }
 
     for ( const org of orgs) {
-      if (org.name && ! org.path){
-        org.path = org.name;
-      }
-
-      if (org.path && ! org.name){
-        org.name = org.path;
-      }
 
       if (org.type && typeof org.type === 'string'){
 
         const typeService = context.app.service('types');
 
-        const finds = await typeService.finds({
+        const finds = await typeService.find({
           query: {
             path: org.type,
             owner: 'orgs'
@@ -45,7 +38,7 @@ module.exports = function () {
         if (finds.total > 0){
           oType = finds.data[0];
         } else {
-          oType = await typeService.create({path:data.type});
+          oType = await typeService.create({path:data.type, owner: 'orgs'});
         }
 
         org.type = {
