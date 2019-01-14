@@ -1,11 +1,13 @@
 
 const userOrgFind = require('../../utils/js/user-org-find');
-const buildResult = require('../../utils/js/build-page-result');
+
 module.exports = async function (context, options={}) {
 
   //const pageData = context.data.data;
   const page = context.data.page;
   const action = context.data.action || 'open';
+
+  const buildResult = require('../../utils/js/build-result')(context,options);
 
   //const mongooseClient = context.app.get('mongooseClient');
 
@@ -13,7 +15,7 @@ module.exports = async function (context, options={}) {
     const orgs = await userOrgFind(context,options);
     const orgList = Object.values(orgs);
 
-    context.result = await buildResult(context,{ orgs: orgList });
+    context.result = await buildResult.pageResult({ orgs: orgList });
   }
 
   return context;
