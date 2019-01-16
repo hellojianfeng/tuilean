@@ -38,6 +38,6 @@ module.exports = function (context) {
     };
   };
 
-  return { pageResult, operationResult};
+  return { page: pageResult, operation: operationResult};
 };
 

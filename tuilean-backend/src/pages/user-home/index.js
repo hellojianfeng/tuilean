@@ -15,7 +15,7 @@ module.exports = async function (context, options={}) {
     const orgs = await userOrgFind(context,options);
     const orgList = Object.values(orgs);
 
-    context.result = await buildResult.pageResult({ orgs: orgList });
+    context.result = await buildResult.page({ orgs: orgList });
   }
 
   return context;

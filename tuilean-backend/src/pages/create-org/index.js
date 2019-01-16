@@ -14,8 +14,8 @@ module.exports = async function (context) {
   const buildResult = require('../../utils/js/build-result')(context);
 
   if (action === 'open'){
-    const types = await typeService.find({query:{owner:'orgs'}});
-    context.result = await buildResult.pageResult({ types });
+    const finds = await typeService.find({query:{owner:'orgs'}});
+    context.result = await buildResult.page({ types: finds.data });
     return context;
   }
 
@@ -30,7 +30,7 @@ module.exports = async function (context) {
       throw new Error('org type is required!');
     }
 
-    context.result = await buildResult.pageResult({ create_data: pageData });
+    context.result = await buildResult.page({ create_data: pageData });
     return context;
   }
 

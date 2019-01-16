@@ -41,10 +41,13 @@ const orgInitialize = async function (context, options = {}) {
 
   let action = context.data.action || 'open';
 
-  await operationStatus.checkStatus(operation);
+  context = await operationStatus.checkInitialize(operation);
+  if(context.result){
+    return context;
+  }
 
   if (action === 'open'){
-    context.result = await buildResult.operationResult(runData);
+    context.result = await buildResult.operation(runData);
     return context;
   }
 
@@ -332,7 +335,7 @@ const orgInitialize = async function (context, options = {}) {
   }
 
   if (action !== ['open','check','initialize']) {
-    context.result = buildResult.pageResult({'error':'support actions:  open | check | initialize '});
+    context.result = buildResult.page({'error':'support actions:  open | check | initialize '});
   }
 
   return context;

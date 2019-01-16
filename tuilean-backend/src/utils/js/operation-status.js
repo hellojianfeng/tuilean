@@ -1,44 +1,44 @@
 
-module.exports = async function (context, options={}) {
+module.exports = function (context, options={}) {
 
-  const buildResult = require('../../../utils/js/build-result')(context,options);
+  const buildResult = require('./build-result')(context,options);
 
   const isInitialize = async ( operation ) => {
     if ( operation && operation._id){
       const runService = context.app.service('go-operation');
       const query = {
-        'operation.oid':options.operation._id
+        'operation.oid':operation._id
       };
       const findResult = await runService.find({query});
       if (findResult.total > 0){
         return true;
       }
       return false;
+    } else {
+      throw new Error('no valid operation for isInitialize!');
     }
-    return false;
+    
   };
 
-  const checkInitialize = async ( operation ) => {
-
-    const action = context.data.action || 'open';
+  const checkInitialize = async ( operation, showResultWhenInitialized = true ) => {
 
     const checked = await isInitialize(operation);
 
-    if(checked){
-      context.result = await buildResult.operationResult({
-        is_initialized: checked,
+    if(checked && showResultWhenInitialized){
+      context.result = await buildResult.operation({
+        is_initialized: true,
         message: 'operation is initialized, please do not initialize it again!'
       });
-      return context;
-    } else {
-      if (action === 'check'){
-        context.result = await buildResult.operationResult({
-          is_initialized: checked,
-          message: 'operation is not initialized, please initialize it first!'
-        });
-        return context;
-      }
+    } 
+
+    if(!checked && !showResultWhenInitialized){
+      context.result = await buildResult.operation({
+        is_initialized: false,
+        message: 'operation is not initialized, please initialize it first!'
+      });
     }
+    
+    return context;
   };
 
   return  {

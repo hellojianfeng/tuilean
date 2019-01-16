@@ -23,8 +23,8 @@ module.exports = function (app) {
     timestamps: true
   });
 
-  permissions.index({ path: 1, org_id: 1 },  { unique: true });
-  permissions.index({ path: 1, org_path: 1 },  { unique: true });
+  //permissions.index({ path: 1, org_id: 1 },  { unique: true });
+  //permissions.index({ path: 1, org_path: 1 },  { unique: true });
 
   return mongooseClient.model('permissions', permissions);
 };
