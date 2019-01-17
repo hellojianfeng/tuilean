@@ -54,12 +54,9 @@ module.exports = function (options = {}) {
         //if not show doOperation result, should add record operation
         if (!context.result){
           context.data.result = doResult;
-          context.data.operation = {
-            oid: current_operation._id,
-            path: current_operation.path,
-            org_id: current_operation.org_id,
-            org_path: current_operation.org_path
-          },
+          context.data.operation_id = current_operation._id;         
+          context.data.org_id = current_operation.org_id;
+          context.data.org_path = current_operation.org_path;
           context.data.user = {oid: context.params.user._id, email: context.params.user.email};
         }
       } else {

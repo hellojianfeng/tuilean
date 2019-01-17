@@ -99,7 +99,11 @@ const orgInitialize = async function (context, options = {}) {
       });
 
       if (newOperations.length > 0) {
-        newOperations = await operationService.create(newOperations);
+        const newList = [];
+        for ( const o of newOperations){
+          newList.push(await operationService.create(o));
+        }
+        newOperations = newList;
       }
     }
 
@@ -143,7 +147,11 @@ const orgInitialize = async function (context, options = {}) {
       });
 
       if (newPermissions.length > 0) {
-        newPermissions = await permissionService.create(newPermissions);
+        const newList = [];
+        for ( const o of newPermissions){
+          newList.push(await permissionService.create(o));
+        }
+        newPermissions = newList;
       }
     }
 
@@ -185,12 +193,17 @@ const orgInitialize = async function (context, options = {}) {
         return o;
       });
 
-      if (roles.length > 0){
-        newRoles = await roleService.create(roles);
+      if (roles.length > 0) {
+        const newList = [];
+        for ( const o of roles){
+          newList.push(await roleService.create(o));
+        }
+        newRoles = newList;
       }
     }
-
+    
     //add sub-orgs
+    let newOrgs = [];
     if(runData.orgs && !Array.isArray(runData.orgs) && typeof runData.orgs === 'object'){
       const orgsData = Object.assign({},runData.orgs);
       for(const key in orgsData){
@@ -200,8 +213,13 @@ const orgInitialize = async function (context, options = {}) {
       const orgs = Object.values(orgsData);
 
       if (orgs.length > 0) {
-        await orgService.create(orgs, context.params);
+        const newList = [];
+        for ( const o of orgs){
+          newList.push(await orgService.create(o,context.params));
+        }
+        newOrgs = newList;
       }
+      
     }
 
     //reset current org for user which is changed by add sub org
@@ -262,21 +280,21 @@ const orgInitialize = async function (context, options = {}) {
         });
       });
     }
-
-    const addRoleOperations = require('../../../APIs/js/role-operations-add');
+    
+    const addRoleOperations = require('../../../utils/js/add-role-operations');
     await addRoleOperations(context, postAddRoleOperations,false);
 
-    const addRolePermissions = require('../../../APIs/js/role-permissions-add');
+    const addRolePermissions = require('../../../utils/js/add-role-permissions');
     await addRolePermissions(context, postAddRolePermissions,false);
 
-    const addPermissionOperations = require('../../../APIs/js/permission-operations-add');
+    const addPermissionOperations = require('../../../utils/js/add-permission-operations');
     await addPermissionOperations(context, postAddPermissionOperations,false);
 
     //add follows org
-    const orgChildrenFind = require('../../../APIs/js/org-children-find');
-    const orgAncestorFind = require('../../../APIs/js/org-ancestor-find');
+    const orgChildrenFind = require('../../../utils/js/find-org-children');
+    const orgAncestorFind = require('../../../utils/js/find-org-ancestor');
     //const modelsParse = require('../../../APIs/js/models-parse');
-    const addOrgFollows = require('../../../APIs/js/org-follows-add');
+    const addOrgFollows = require('../../../utils/js/add-org-follows');
     const children = await orgChildrenFind(context,{org});
     const ancestors = await orgAncestorFind(context,{org});
 
@@ -331,11 +349,18 @@ const orgInitialize = async function (context, options = {}) {
     //should add record for this operation
     delete context.result;
 
-    return context;
+    return {
+      message: 'org-initialize is successfully!',
+      org,
+      newOperations,
+      newRoles,
+      newPermissions,
+      newOrgs
+    };
   }
 
-  if (action !== ['open','check','initialize']) {
-    context.result = buildResult.page({'error':'support actions:  open | check | initialize '});
+  if (!['open','check','initialize'].includes(action)) {
+    context.result = await buildResult.operation({'error':'support actions:  open | check | initialize '});
   }
 
   return context;
