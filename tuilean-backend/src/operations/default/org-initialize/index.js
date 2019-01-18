@@ -41,8 +41,9 @@ const orgInitialize = async function (context, options = {}) {
 
   let action = context.data.action || 'open';
 
-  context = await operationStatus.checkInitialize(operation);
-  if(context.result){
+  const isInitialized = await operationStatus.isInitialized(operation);
+  if(isInitialized){
+    context.result = await buildResult.operation(await operationStatus.checkInitializeWithResult(operation));
     return context;
   }
 
