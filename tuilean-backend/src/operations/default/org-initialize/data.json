@@ -68,7 +68,53 @@
           }
         }
       },
-      "company.clean":{},
+      "company.clean":{
+        "permissions":[
+          {
+            "name":"member",
+            "description":"member permission in org"
+          },
+          {
+            "name":"public",
+            "description":"public permission in org"
+          }
+        ],
+        "roles": [
+          {
+            "name":"member",
+            "permissions":[
+              {
+                "path":"member"
+              }
+            ],
+            "description":"all users in org exclude public"
+          },
+          {
+            "name":"public",
+            "permissions":[
+              {
+                "path":"public"
+              }
+            ],
+            "description":"public users in org"
+          }
+        ],
+        "operations":[],
+        "orgs":[
+          {
+            "name":"finance",
+            "type":"department.finance"
+          },
+          {
+            "name":"hr",
+            "type":"department.hr"
+          },
+          {
+            "name":"service",
+            "type":"department.service"
+          }
+        ]
+      },
       "department":{},
       "department.company":{}
     }

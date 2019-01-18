@@ -44,25 +44,23 @@ module.exports = function (options = {}) {
       if (fs.existsSync('src/operations/'+ operationApp + '/' +operationPath + '/data.json'))
       {
         const jsonData = require('../operations/default/'+ current_operation.path+'/data.json');
+        context.params.configuration = context.params.configuration || {};
         context.params.configuration.operation = jsonData;
       }
-      if (fs.existsSync('src/operations/' + operationApp + '/' + operationPath + '/do.js'))
+      if (fs.existsSync('src/operations/' + operationApp + '/' + operationPath + '/index.js'))
       {
-        const doOperation = require('../operations/default/' + operationPath + '/do.js');
+        const doOperation = require('../operations/default/' + operationPath + '/index.js');
         const doResult = await doOperation(context,options);
         //if not show doOperation result, should add record operation
         if (!context.result){
           context.data.result = doResult;
-          context.data.operation = {
-            oid: current_operation._id,
-            path: current_operation.path,
-            org_id: current_operation.org_id,
-            org_path: current_operation.org_path
-          },
+          context.data.operation_id = current_operation._id;         
+          context.data.org_id = current_operation.org_id;
+          context.data.org_path = current_operation.org_path;
           context.data.user = {oid: context.params.user._id, email: context.params.user.email};
         }
       } else {
-        throw new Error('not find do.js for operation of '+ operationPath );
+        throw new Error('not find index.js for operation of '+ operationPath );
       }
     } else {
       throw new Error('not find valid operation!');

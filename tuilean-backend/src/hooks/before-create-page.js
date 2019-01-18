@@ -13,9 +13,9 @@ module.exports = function (options = {}) {
         const jsonData = require('../pages/'+ page +'/data.json');
         context.params.configuration.page = jsonData;
       }
-      if (fs.existsSync('src/pages/' + page + '/do.js'))
+      if (fs.existsSync('src/pages/' + page + '/index.js'))
       {
-        const doPage = require('../pages/' + page + '/do.js');
+        const doPage = require('../pages/' + page + '/index.js');
         const doResult = await doPage(context,options);
         //if not show doOperation result, should add record operation
         if (!context.result){
@@ -24,7 +24,7 @@ module.exports = function (options = {}) {
           context.data.user = { oid: context.params.user._id, email: context.params.user.email };
         }
       } else {
-        throw new Error('do.js not exist for page of '+ page );
+        throw new Error('index.js not exist for page of '+ page );
       }
     } else {
       throw new Error('not find valid page!');

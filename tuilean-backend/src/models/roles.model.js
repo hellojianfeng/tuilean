@@ -19,10 +19,10 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
   const roles = new Schema({
-    name: { type: String },
+    name: { type: String, required: true },
     display_name: { type: String },
     description: { type: String },
-    path: { type: String }, // dot sperated string, for example, company1#department1#office1, default is same as name
+    path: { type: String, required: true }, // dot sperated string, for example, company1#department1#office1, default is same as name
     org_id: { type: Schema.Types.ObjectId, required: true  },
     org_path: { type: String, required: true  },
     status: {
@@ -35,8 +35,8 @@ module.exports = function (app) {
     timestamps: true
   });
 
-  roles.index({ path: 1, org_id: 1 },  { unique: true });
-  roles.index({ path: 1, org_path: 1 },  { unique: true });
+  //roles.index({ path: 1, org_id: 1 },  { unique: true });
+  //roles.index({ path: 1, org_path: 1 },  { unique: true });
 
   return mongooseClient.model('roles', roles);
 };
