@@ -335,9 +335,9 @@ module.exports = function (context,options={}, refresh=false) {
     return await getModelList(operationsData,operationService);
   };
 
-  const getOrgUserRoles = async ( org = null ) => {
-    const user = context.params.user;
-    org = org || await getCurrentOperationOrg() || await getCurrentOrg();
+  const getOrgUserRoles = async ( options = {} ) => {
+    const user = options.user || context.params.user;
+    const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
 
     if (user && user.roles){
       const idList = user.roles.map ( r => {
@@ -353,14 +353,14 @@ module.exports = function (context,options={}, refresh=false) {
     return [];
   };
 
-  const getOrgUserPermissions = async ( org = null ) => {
-    const user = context.params.user;
-    org = org || await getCurrentOperationOrg() || await getCurrentOrg();
+  const getOrgUserPermissions = async ( options={} ) => {
+    const user = options.user || context.params.user;
+    const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
     const idList = user.permissions.map ( p => {
       if (p.org_path === org.path)
       {return p.oid;}
     });
-    const roles = await getOrgUserRoles( org );
+    const roles = await getOrgUserRoles( options );
     roles.map ( r => {
       r.permissions.map ( p => {
         idList.push(p.oid);
@@ -370,20 +370,20 @@ module.exports = function (context,options={}, refresh=false) {
     return finds && finds.data || [];
   };
 
-  const getOrgUserOperations = async ( org = null ) => {
-    const user = context.params.user;
-    org = org || await getCurrentOperationOrg() || getCurrentOrg();
+  const getOrgUserOperations = async ( options={} ) => {
+    const user = options.user || context.params.user;
+    const org = options.org || await getCurrentOperationOrg() || getCurrentOrg();
     const idList = user.operations.map ( o => {
       if(o.org_path === org.path)
       {return o.oid;}
     });
-    const roles = await getOrgUserRoles( org );
+    const roles = await getOrgUserRoles( options );
     roles.map ( r => {
       r.operations.map ( o => {
         idList.push(o.oid);
       });
     });
-    const permissions = await getOrgUserPermissions( org );
+    const permissions = await getOrgUserPermissions( options ={} );
     permissions.map ( p => {
       p.operations.map ( o => {
         idList.push(o.oid);
@@ -393,10 +393,10 @@ module.exports = function (context,options={}, refresh=false) {
     return finds && finds.data || [];
   };
 
-  const getOrgUserFollowPermissions = async ( org = null ) => {
+  const getOrgUserFollowPermissions = async ( options = {} ) => {
     const operation_org = await getCurrentOperationOrg();
-    org = org || operation_org || await getCurrentOrg();
-    const userRoles = await getOrgUserRoles( org );
+    const org = options.org || operation_org || await getCurrentOrg();
+    const userRoles = await getOrgUserRoles( options );
     const urList = userRoles.map ( ur => {
       return ur.path;
     });
@@ -427,8 +427,8 @@ module.exports = function (context,options={}, refresh=false) {
     return permissions;
   };
 
-  const getOrgUserFollowOperations = async ( org = null ) => {
-    const followPermissions = await getOrgUserFollowPermissions( org );
+  const getOrgUserFollowOperations = async ( options = {} ) => {
+    const followPermissions = await getOrgUserFollowPermissions( options );
     let opIds = [];
     for (const fp of followPermissions) {
       fp.operations.map( o => {
