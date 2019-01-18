@@ -125,11 +125,11 @@ module.exports = async function (context, options = {}) {
   }
   
   if (action === 'find-org-user' || action === 'org-user-find'){
-    const { current_operation_org } = await contextParser(context,options);
+    const { current_operation_org } = await contextParser.parse();
     const orgPath = current_operation_org.path;
     const inputData = context.data.data;
   
-    const limit = inputData.limit || 50;
+    const limit = inputData.limit || 20;
     const skip = inputData.skip || 0;
   
     const finds = await userService.find({query: { 
@@ -140,12 +140,13 @@ module.exports = async function (context, options = {}) {
         {'operations.org_path': orgPath}
       ]}});
   
-    context.result = finds.data.map ( u => {
+    context.result = await buildResult.operation(finds.data.map ( u => {
       u.roles = u.roles.filter ( r => {
         return r.org_path === orgPath;
       });
+      if(u.password) delete u.password;
       return u;
-    });
+    }));
     return context;
   }
   
