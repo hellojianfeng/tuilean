@@ -70,6 +70,7 @@ module.exports = async function (context, options = {}) {
       });
       await userService.patch(user._id,{roles: user.roles});
       result.user = user;
+      if(result.user && result.user.password) delete result.user.password;
       context.result = await buildResult.operation(result);
     } else {
       throw new Error('no valid user or role(s)!');
@@ -78,40 +79,49 @@ module.exports = async function (context, options = {}) {
   }
   
   if(action === 'create-org-user'){
-    const result = {};
-    const createUserData = context.data && context.data.data;
-    const {everyone_role, role, roles} = await contextParser(context,options);
-    if (typeof createUserData === 'object' && createUserData.email){
-      createUserData.password = createUserData.password || 'password123';
-      const finds = await userService.find({query:{email: createUserData.email}});
-      if (finds.total > 0){
-        context.result = await buildResult.operation({error: 500, message: 'user exist already!'});
-        return context;
+    const errors = [];
+    let createUserData = context.data && context.data.data;
+    const {everyone_role} = await contextParser.parse();
+    const users = [];
+    if (!Array.isArray(createUserData)){
+      createUserData = [ createUserData];
+    }
+    for ( const o of createUserData) {
+      let userData = o.user;
+      if(typeof userData === 'string'){
+        userData = { email: userData};
       }
-      if(createUserData.roles) delete createUserData.roles;
-      const user = await userService.create(createUserData);
-      if (user){
-        user.roles = [ { oid: everyone_role._id, path: everyone_role.path, org_id: everyone_role.org_id, org_path: everyone_role.org_path}];
-        if (role){
-          roles.push(role);
+      const roles = o.roles && await contextParser.getRoles(o.roles) || [];
+      userData.password = userData.password || 'password123';
+      if (userData.email){
+        const finds = await userService.find({query:{email: userData.email}});
+        if (finds.total > 0){
+          errors.push({error:100,message:'user exist already!', user: userData});
+        } else {
+          const user = await userService.create(userData);
+          if (user){
+            user.roles = [ { oid: everyone_role._id, path: everyone_role.path, org_id: everyone_role.org_id, org_path: everyone_role.org_path}];
+            user.roles = user.roles.concat(roles.map( r => {
+              return {
+                oid: r._id,
+                path: r.path,
+                org_id: r.org_id,
+                org_path: r.org_path
+              };
+            }));
+            user.roles = _.uniqBy(user.roles, r => { return r.path; });
+            await userService.patch(user._id, { roles: user.roles });
+            const oUser = await userService.get(user._id);
+            if (oUser && oUser.password) delete oUser.password;
+            users.push(oUser);
+          }
         }
-        user.roles = user.roles.concat(roles.map( r => {
-          return {
-            oid: r._id,
-            path: r.path,
-            org_id: r.org_id,
-            org_path: r.org_path
-          };
-        }));
-        user.roles = _.uniqBy(user.roles, r => { return r.path; });
-        await userService.patch(user._id, { roles: user.roles });
-        result.user = await userService.get(user._id);
-        context.result = await buildResult.operation(result);
-        return context;
+      } else {
+        errors.push({error: 100, message:'not find email in user data!', user: userData});
       }
     }
   
-    context.result = await buildResult.operation({error: 500, message:'do nothing in create-org-user!'});
+    context.result = await buildResult.operation({created_users: users, errors});
   }
   
   if (action === 'find-org-user' || action === 'org-user-find'){
