@@ -1,6 +1,6 @@
 
 /**
- * input format: 
+ * input format:
  *  {
  *    org:{ path(or oid) of org },
  *    follow: {
@@ -21,7 +21,7 @@ module.exports = async function (context, options = {}) {
   const followData = options && options.follow || context && context.data && context.data.data && context.data.data.follow;
 
   const contextParser = require('./context-parser')(context,options);
-  const org = await contextParser.getOrg({org: followData.org_path}); 
+  const org = await contextParser.getOrg({org: followData.org_path});
   const current_org = await contextParser.getCurrentOrg();
 
   const newRoles = [];
@@ -33,7 +33,7 @@ module.exports = async function (context, options = {}) {
       }
       let role;
       if(typeof r === 'string'){
-        role = await contextParser.getRole({ role: { path: r, org: current_org }});
+        role = await contextParser.getRole({ path: r, org: current_org });
       }
       if (typeof r === 'object' && r._id && r.path){
         role = r;
@@ -53,7 +53,7 @@ module.exports = async function (context, options = {}) {
       }
       let permission;
       if(typeof p === 'string'){
-        permission = await contextParser.getPermission({ role: { path: p, org:current_org }});
+        permission = await contextParser.getPermission({ path: p, org });
       }
       if (typeof p === 'object' && p._id && p.path){
         permission = p;

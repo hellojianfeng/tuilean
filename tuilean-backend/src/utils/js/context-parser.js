@@ -38,6 +38,12 @@ module.exports = function (context,options={}, refresh=false) {
       if(orgData.path && typeof orgData.path === 'string'){
         orgPath = orgData.path;
       }
+      if(orgData.org && typeof orgData.org === 'string'){
+        if(ObjectId.isValid(orgData.org)){
+          return await orgService.get(orgData.org);
+        }
+        orgPath = orgData.org;
+      }
     }
 
     if (typeof orgData === 'string'){
@@ -372,7 +378,7 @@ module.exports = function (context,options={}, refresh=false) {
 
   const getOrgUserOperations = async ( options={} ) => {
     const user = options.user || context.params.user;
-    const org = options.org || await getCurrentOperationOrg() || getCurrentOrg();
+    const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
     const idList = user.operations.map ( o => {
       if(o.org_path === org.path)
       {return o.oid;}
@@ -393,10 +399,39 @@ module.exports = function (context,options={}, refresh=false) {
     return finds && finds.data || [];
   };
 
+  const getOrgUserFollows = async (options = {}) => {
+    const org = options.org || await getCurrentOrg();
+    const userRoles = await getOrgUserRoles( { org } );
+    const everyone_role = await getEveryoneRole( org );
+    userRoles.push(everyone_role);
+    const follows = [];
+    for( const f of org.follows){
+      const follow_org = await getOrg(f.org_path);
+      const roleListData = f.roles.map( o => {
+        return { oid: o.oid };
+      });
+      const roles = await getRoles(roleListData);
+      const permissionListData = f.permissions.map( o => {
+        return { oid: o.oid };
+      });
+      const permissions = await getPermissions(permissionListData);
+      const operationIds = [];
+      permissions.map ( p=> {
+        operationIds.push(p.operations.map(o=>{
+          return o.oid;
+        }));
+      });
+      const finds = await operationService.find({query:{_id:{$in:operationIds}}});
+      const operations = finds && finds.data;
+      follows.push({ org: follow_org, roles, permissions, operations});
+    }
+    return follows;
+  };
+
   const getOrgUserFollowPermissions = async ( options = {} ) => {
     const operation_org = await getCurrentOperationOrg();
     const org = options.org || operation_org || await getCurrentOrg();
-    const userRoles = await getOrgUserRoles( options );
+    const userRoles = await getOrgUserRoles( { org } );
     const urList = userRoles.map ( ur => {
       return ur.path;
     });
@@ -510,8 +545,7 @@ module.exports = function (context,options={}, refresh=false) {
     const user_roles = await getOrgUserRoles();
     const user_permissions = await getOrgUserPermissions();
     const user_operations = await getOrgUserOperations();
-    const user_follow_permissions = await getOrgUserFollowPermissions();
-    const user_follow_operations = await getOrgUserFollowOperations();
+
     current_org = await getCurrentOrg();
     const operation_org_users = await getOrgUsers();
     const operation_org_roles = await getOrgRoles();
@@ -519,6 +553,15 @@ module.exports = function (context,options={}, refresh=false) {
     const operation_org_operations = await getOrgOperations();
     follow_org = await getFollowOrg();
     const current_follow_org = await getCurrentFollowOrg();
+    const user_follows = await getOrgUserFollows();
+    const current_user_follow = user_follows.filter( o => {
+      return o.org.path === current_follow_org.path;
+    }).shift();
+    const user_follow_org = current_user_follow && current_user_follow.org || [];
+    const user_follow_roles = current_user_follow && current_user_follow.roles || [];
+    const user_follow_permissions = current_user_follow && current_user_follow.permissions || [];
+    const user_follow_operations = current_user_follow && current_user_follow.operations || [];
+
 
     if (orgData){
       if(refresh){
@@ -598,7 +641,7 @@ module.exports = function (context,options={}, refresh=false) {
       everyone_permission, everyone_permission_operations, current_operation, current_operation_org,
       current_org, current_follow_org, operation_org_users,operation_org_roles, operation_org_permissions, operation_org_operations,
       follow_org, user_roles, user_permissions, user_operations,
-      user_follow_permissions, user_follow_operations
+      user_follows, current_user_follow, user_follow_org, user_follow_roles,user_follow_permissions, user_follow_operations
     };
 
   };
