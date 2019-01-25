@@ -1,11 +1,15 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 
+const afterCreateNotification = require('../../hooks/after-create-notification');
+
+const beforeCreateNotification = require('../../hooks/before-create-notification');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
     find: [],
     get: [],
-    create: [],
+    create: [beforeCreateNotification()],
     update: [],
     patch: [],
     remove: []
@@ -15,7 +19,7 @@ module.exports = {
     all: [],
     find: [],
     get: [],
-    create: [],
+    create: [afterCreateNotification()],
     update: [],
     patch: [],
     remove: []

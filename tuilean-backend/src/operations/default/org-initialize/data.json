@@ -13,7 +13,24 @@
           },
           "org-user-management":{
             "name":"org-user-management",
-            "roles":["admin"]
+            "roles":["admin"],
+            "allow":{
+              "channels":[
+                {
+                  "type":"notification",
+                  "from":
+                  {
+                    "page":"join-org",
+                    "collaborate":"$individual"
+                  },
+                  "to":[
+                    {
+                      "operation": "$this"
+                    }
+                  ]
+                }
+              ]
+            }
           }
         },
         "permissions":{

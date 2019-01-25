@@ -1,7 +1,7 @@
-// Initializes the `go-operation` service on path `/go-operation`
+// Initializes the `notify` service on path `/notify`
 const createService = require('feathers-mongoose');
-const createModel = require('../../models/go-operation.model');
-const hooks = require('./go-operation.hooks');
+const createModel = require('../../models/notify.model');
+const hooks = require('./notify.hooks');
 
 module.exports = function (app) {
   const Model = createModel(app);
@@ -13,10 +13,10 @@ module.exports = function (app) {
   };
 
   // Initialize our service with any options it requires
-  app.use('/go-operation', createService(options));
+  app.use('/notify', createService(options));
 
   // Get our initialized service so that we can register hooks
-  const service = app.service('go-operation');
+  const service = app.service('notify');
 
   service.hooks(hooks);
 };

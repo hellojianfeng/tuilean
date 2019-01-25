@@ -1,15 +1,15 @@
-// notifier-model.js - A mongoose model
+// notify-model.js - A mongoose model
 // 
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
-  const notifier = new Schema({
-    text: { type: String, required: true }
+  const notify = new Schema({
+    name: { type: String }
   }, {
     timestamps: true
   });
 
-  return mongooseClient.model('notifier', notifier);
+  return mongooseClient.model('notify', notify);
 };
