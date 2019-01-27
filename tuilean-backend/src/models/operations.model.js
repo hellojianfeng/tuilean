@@ -15,6 +15,8 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
+  const { owner_channel } = require('./schemas')(app);
+
   const operations = new Schema({
     name: { type: String, required: true },
     path: { type: String, required: true },//dot seperate name of operation, unique in app
@@ -30,6 +32,12 @@ module.exports = function (app) {
       allow: { type: Number },
       current: { type: Number }
     },
+    channels: {
+      joined: [ owner_channel ],
+      joining: [ owner_channel],
+      inviting: [ owner_channel ],
+      rejected: [ owner_channel ]
+    }
   }, {
     timestamps: true
   });

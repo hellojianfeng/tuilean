@@ -6,13 +6,7 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
 
-  const theSchema = new Schema({
-    oid: { type: Schema.Types.ObjectId },
-    path: { type: String }, // dot sperated string, for example, default is same as name
-    org_id: { type: Schema.Types.ObjectId },
-    org_path: { type: String },
-    data: { type: Schema.Types.Mixed }
-  });
+  const { org_obj, owner_channel } = require('./schemas');
 
   const users = new mongooseClient.Schema({
     mobile: {type: String},
@@ -29,9 +23,15 @@ module.exports = function (app) {
       data: { type: Schema.Types.Mixed }
     },
     password: { type: String, required: true },
-    roles: [ theSchema ],
-    permissions: [ theSchema ],
-    operations: [ theSchema ],
+    roles: [ org_obj ],
+    permissions: [ org_obj ],
+    operations: [ org_obj ],
+    channels: {
+      joined: [ owner_channel ],
+      joining: [ owner_channel],
+      inviting: [ owner_channel ],
+      rejected: [ owner_channel ]
+    },
     current_org: {
       oid: { type: Schema.Types.ObjectId },
       path: String,

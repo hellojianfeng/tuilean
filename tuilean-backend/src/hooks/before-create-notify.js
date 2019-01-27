@@ -18,16 +18,19 @@ module.exports = function (options = {}) {
     const operation = operationData ? await contextParser.getOperation({operation: operationData}) : null;
 
     const channelQuery = { type: 'notify' };
-    if (page) {
-      channelQuery.page = page;
-    }
-    if(operation){
+
+    if (operation){
       channelQuery.operation = operation;
     }
-    const channels = await channelHelper.getChannels(channelQuery);
+
+    if(page){
+      channelQuery.page = page;
+    }
+
+    const user_channels = await channelHelper.getUserChannels(channelQuery);
 
     if (action === 'open'){
-      context.result = await buildResult.notify({channels});
+      context.result = await buildResult.notify({user_channels});
       return context;
     }
 
@@ -50,7 +53,7 @@ module.exports = function (options = {}) {
       // if(notifyData.channel && notifyData.contents && channels.includes(notifyData.channel)){
       //   notificationData.channel = notifyData.channel;
       //   notificationData.contents =notifyData.contents;
-        
+
       //   const created = await notificationService.create(notificationData);
       //   context.service.emit( 'notify_' + notifyData.channel, { type: 'notification', data: created});
       // }
@@ -71,18 +74,28 @@ module.exports = function (options = {}) {
       //}
     }
 
-    if(action === 'create-channel'){
-      const { to_scopes, from_scope, channel_path } = notifyData;
-
-      if(to_scopes && from_scope) {
-        const created = channelHelper.findOrCreateChannel({to_scopes,from_scope, path: channel_path, type: 'notify'});
-        if (created){
-          const result = await buildResult.notify({created_channel: created});
-          return result;
-        } else {
-          context.result = await buildResult.notify({code: 300, error: 'fail to create channel, please check input!'});
-          return context;
+    if(action === 'create-channel' || action === 'new-channel'){
+      let { creator, joiners, channel } = context.data;
+      const inviter = {};
+      if (creator){
+        let channelPath ='notify';
+        if (creator.operation){
+          inviter.operations = [creator.operation];
+          channelPath += '_' + creator.operation._id;
         }
+        if (creator.page){
+          inviter.pages = [creator.page];
+          channelPath += '_' + page;
+        }
+        if(creator.user){
+          inviter.users = [creator.user];
+          channelPath += '_' + creator.user._id;
+        }
+        channel = channel || { type: 'notify', path: channelPath };
+        channel.inviter = inviter;
+        channel.joiners = joiners;
+        const created = await channelHelper.createChannel(channel);
+        return context.result = buildResult.notify({created_channel: created});
       }
     }
 
