@@ -33,6 +33,7 @@ module.exports = function (app) {
       current: { type: Number }
     },
     channels: {
+      allow: [ owner_channel ],
       joined: [ owner_channel ],
       joining: [ owner_channel],
       inviting: [ owner_channel ],

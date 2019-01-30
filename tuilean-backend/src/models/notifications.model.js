@@ -10,22 +10,25 @@ module.exports = function (app) {
     path: { type: String }, 
     tags: { type: String },
     description: { type: String },
+    title: String,
     header: { type: String },
-    body: { type: String, required: true },
+    body: { type: Schema.Types.Mixed },
     footer: { type: String },
-    contents: [ contentSchema ],
     data: { type: Schema.Types.Mixed }
   });
 
+  const { channel_scope } = require('./schemas')(app);
+
   const notifications = new Schema({
-    title: { type: String },
-    description: { type: String },
+    name: String,
     path: { type: String, required: true },
-    contents: [ contentSchema ],
     tags: { type: String },
-    channel: { type: Schema.Types.ObjectId },
-    user: { email: String, oid: { type: Schema.Types.ObjectId }},
-    data: { type: Schema.Types.Mixed }
+    description: { type: String },
+    channel: { oid: { type: Schema.Types.ObjectId }, path: String, type: String },
+    from: {type: channel_scope, required: true } ,
+    to:  [ channel_scope ] ,
+    contents: [contentSchema],
+    data: { type: Schema.Types.Mixed },
   }, {
     timestamps: true
   });

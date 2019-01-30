@@ -40,11 +40,24 @@ module.exports = function (options = {}) {
         org_id: o._id,
         org_path: o.path
       });
-      //add default org-follow operation
+      //add default org-user-admin operation
       const orgUserManage = await operationService.create({
         name: 'org-user-admin',
         org_id: o._id,
-        org_path: o.path
+        org_path: o.path,
+        channels: {
+          allow:[
+            {
+              channel: { type: 'notify' },
+              scopes:[
+                {
+                  page:'join-org',
+                  users: ['$self']
+                }
+              ]
+            }
+          ]
+        }
       });
       //administrator permission
       const administrators = await permissionService.create(

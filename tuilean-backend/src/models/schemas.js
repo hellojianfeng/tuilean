@@ -11,29 +11,38 @@ module.exports = function (app) {
     org_id: {type: Schema.Types.ObjectId},
     org_path: String
   });
-  const userObj = new Schema({
-    oid: {type: Schema.Types.ObjectId},
-    email: String
-  });
+  // const userObj = new Schema({
+  //   oid: {type: Schema.Types.ObjectId},
+  //   email: String,
+  //   name: String
+  // });
   const orgSchema = new Schema({
     oid: {type: Schema.Types.ObjectId},
     path: String
   });
   const scopeSchema = new Schema({
     operation: orgObj,
-    page: { name: String },
+    page: String,
+    action: String,
     orgs: [ orgSchema ],
     roles:[ orgObj ],
     permissions: [ orgObj ],
-    users:[ userObj ],
+    users:[ String ],
     data: { type: Schema.Types.Mixed }
   });
 
+  const channelSchema = new Schema({
+    oid: { type: Schema.Types.ObjectId }, 
+    type: String, 
+    path: String, 
+    tags: [ String ]
+  });
+
   const ownerChannelSchema = new Schema({
-    channel: { oid: { type: Schema.Types.ObjectId}, type: String, path: String, tags: [ String ]},
+    channel: channelSchema,
     scopes: [ scopeSchema ],
     data: { type: Schema.Types.Mixed }
   });
 
-  return { owner_channel: ownerChannelSchema, channel_scope: scopeSchema, compact_org_obj: orgSchema, compact_org: orgObj };
+  return {channel_obj: channelSchema, owner_channel: ownerChannelSchema, channel_scope: scopeSchema, compact_org_obj: orgObj, compact_org: orgSchema };
 };

@@ -4,6 +4,9 @@
 // eslint-disable-next-line no-unused-vars
 module.exports = function (options = {}) {
   return async context => {
+    const service = context.service;
+    const event_id = context.data.type + '_' + context.id;
+    await service.patch(context.result._id, { event_id });
     return context;
   };
 };

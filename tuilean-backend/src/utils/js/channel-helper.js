@@ -1,20 +1,107 @@
 
 
-module.exports = async function(context, options) {
+module.exports = function(context, options) {
 
   const contextParser = require('./context-parser')(context,options);
 
-  return {
+  const filterJoiners = ( options ) => {
+    let { inviter, joiners, type } = options;
+    const allow_joiners = [];
 
-    filterJoiners: async ( options ) => {
-      const { inviter, joiners } = options;
-
-      return joiners.map ( o => {
-        if(o.channel.allow_inviters.include(inviter)){
-          return o;
+    joiners.map ( o => {
+      const e = o.page || o.operation;
+      e.channels.allow.map( a => {
+        if (type && type === 'notify' && a.channel && a.channel.type && a.channel.type === type ){
+          if ( inviter.page && a.scopes){
+            a.scopes.map ( s => {
+              if ( s.page && s.page === inviter.page){
+                allow_joiners.push(o);
+              }
+            });
+          }
+          if ( inviter.operation && inviter.operation.path && inviter.operation.org_path && a.scopes ){
+            a.scopes.map ( o => {
+              if(o.operation && o.operation.path && o.operation.path === inviter.operation.path){
+                if(o.operation.org_path && o.operation.org_path === inviter.operation.org_path){
+                  allow_joiners.push(o);
+                }
+              }
+            });
+          }
         }
       });
-    },
+    });
+
+    return { inviter, allow_joiners, joiners };
+  };
+
+  const addChannelScopes = async ( options ) => {
+    const userService = context.app.service('users');
+    const operationService = context.app.service('operations');
+
+    const { scopes, channel } = options;
+    const channels = [];
+    for ( const scope of scopes){
+      const { page, operation, roles, permissions, users } = scope;
+
+      if ( page || operation ){
+        if (users && users.length > 0) {
+          for ( const email of users ){
+            const finds = await userService.find({query:{email}});
+            const user = finds.data[0];
+            if (user){
+              user.channels = user.channels || {};
+              user.channels.joined = user.channels.joined || [];
+              let isNewChannel = true;
+              user.channels.joined.map ( o => {
+                if ( o.channel.oid.equals(channel._id)){
+                  //to-do: how to determind scope is exist?
+                  o.scopes.push({page, operation,roles, permissions});
+                  channels.push({page, operation,roles, permissions,user});
+                  isNewChannel = false;
+                }
+              });
+              if(isNewChannel){
+                user.channels.joined.push({channel: { oid: channel._id, path: channel.path} , scopes: [{page, operation,roles, permissions}]});
+                channels.push({page, operation,roles, permissions,user});
+              }
+  
+              await userService.patch(user._id, {channels: user.channels});
+            }
+          }
+          continue;
+        }
+
+        if ( operation)
+        {
+          operation.channels = operation.channels || {};
+          operation.channels.joined = operation.channels.joined || [];
+          let isNewChannel = true;
+          operation.channels.joined.map ( o => {
+            if ( o.channel.oid.equals(channel._id)){
+              //to-do: how to determind scope is exist?
+              o.scopes.push({roles, permissions});
+              channels.push({roles, permissions,operation});
+              isNewChannel = false;
+            }
+          });
+          if(isNewChannel){
+            operation.channels.joined.push({channel: { oid: channel._id, path: channel.path} , scopes: [{roles, permissions}]});
+            channels.push({roles, permissions,operation});
+          }
+          await operationService.patch(operation._id, {channels: operation.channels});
+        }
+      } else {
+        channels.push({code: 201, error: 'must provide operation or page for channel scope!'});
+      }
+    }
+
+    return channels;
+  };
+
+  return {
+
+    filterJoiners,
 
     getUserChannels: async ( options = {}) => {
 
@@ -35,27 +122,36 @@ module.exports = async function(context, options) {
       const { user_operations } = await contextParser.parse();
 
       const user_operation_channels = typeChannels(user_operations,type);
-      const user_self_channels = typeChannels(user,type);
+      const user_self_channels = typeChannels([user],type);
 
       const user_all_channels = user_operation_channels.concat(user_self_channels);
       return { user_all_channels,user_operation_channels,user_self_channels};
     },
 
     createChannel: async ( options ) => {
-      let { inviter, joiners, type, name, path, tags, description } = options;
+      let { creator, joiners, type, name, path, tags, description } = options;
       const channelService = context.app.service('channels');
-      joiners  = this.filterScope({inviter,joiners});
+      const { inviter, allow_joiners } = filterJoiners({inviter: creator,joiners, type});
 
-      inviter.is_admin = true;
-      const adminers = [ inviter ];
+      if ( name && !path){
+        path = name;
+      }
 
-      const scopes = joiners.push(inviter);
+      if (!name && path){
+        name = path;
+      }
+
+      type = type || 'notify';
+
+      const admins = [ creator ];
+
+      allow_joiners.push(inviter);
 
       //if not find channel, create it
-      if (scopes.length > 0)
+      if (allow_joiners.length > 0)
       {
-        const channel =  await channelService.create({adminers, type, tags, description, name, path});
-        await this.addChannelScopes(channel,scopes);
+        const channel =  await channelService.create({admins, type, tags, description, name, path});
+        await addChannelScopes({channel,scopes: allow_joiners});
         return channel;
       }
 
@@ -64,56 +160,16 @@ module.exports = async function(context, options) {
 
     joinToChannel: async ( options ) => {
 
-      const joiners = this.filterJoiners(options);
+      const joiners = filterJoiners(options);
 
       if (joiners.length > 0 && options.channel){
-        return await this.addChannelScopes({channel: options.channel,scopes: joiners});
+        return await addChannelScopes({channel: options.channel,scopes: joiners});
       } else {
         return { code: 300, error: 'no joiners allowed to join channel!'};
       }
     },
 
-    addChannelScopes: async ( options ) => {
-      const userService = context.app.service('users');
-      const operationService = context.app.service('operations');
-
-      const { scopes, channel } = options;
-      const channels = [];
-      for ( const scope of scopes){
-        const { page, operation, roles, permissions, users } = scope;
-
-        if ( page || operation ){
-          if (users && users.length > 0) {
-            for ( const user of users ){
-              const newChannel = { channel, scopes: { page, operation,roles, permissions} };
-              user.channels = user.channels || {};
-              user.channels.joined = user.channels.joined || [];
-              user.channels.joined.push ( newChannel );
-              newChannel.user = user;
-              channels.push ( newChannel );
-
-              await userService.patch({_id: user._id}, {channels: user.channels});
-            }
-            continue;
-          }
-
-          if ( operation)
-          {
-            const newChannel = { channel, scopes: { roles, permissions} };
-              user.channels = user.channels || {};
-              user.channels.joined = user.channels.joined || [];
-              user.channels.joined.push ( newChannel );
-            operation.channels.push( { channel, scopes:  });
-            channels.push( { operation, channel });
-            await operationService.patch(operation._id, {channels: operation.channels});
-          }
-        } else {
-          channels.push({code: 201, error: 'must provide operation or page for channel scope!'});
-        }
-      }
-
-      return channels;
-    }
+   
 
   };
 };

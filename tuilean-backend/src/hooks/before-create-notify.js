@@ -11,7 +11,9 @@ module.exports = function (options = {}) {
     const page = context.data.page;
     const channelData = context.data.channel;
     const action = context.data.action || 'open';
-    const notifyData = context.data.data;
+    const notificationData = context.data.data;
+
+    const user = context.params.user;
 
     const notificationService = context.app.service('notifications');
 
@@ -35,43 +37,32 @@ module.exports = function (options = {}) {
     }
 
     if(action === 'send'){
-      const channel = await contextParser.getChannel(channelData);
-      notifyData.channel = channel._id;
-      const created = await notificationService.create(notifyData);
-      context.service.emit( 'notify_' + channel._id, { type: 'notify', data: created});
-      // const channelData = { from_scope: context.data.from_scope, path: context.data.path};
-      // const channel = await channelHelper.findOrCreateChannel(channelData);
-      // const notificationService = context.app.service('notifications');
-      // const channels = channelHelper.getChannels();
-      // const notificationData = {};
-      // if(notifyData.name){
-      //   notificationData.name = notifyData.name;
-      // }
-      // if(notifyData.description){
-      //   notificationData.description = notifyData.description;
-      // }
-      // if(notifyData.channel && notifyData.contents && channels.includes(notifyData.channel)){
-      //   notificationData.channel = notifyData.channel;
-      //   notificationData.contents =notifyData.contents;
-
-      //   const created = await notificationService.create(notificationData);
-      //   context.service.emit( 'notify_' + notifyData.channel, { type: 'notification', data: created});
-      // }
-      // if(notifyData.to_scope && notifyData.from_scope && notifyData.contents){
-      //   const to_scope = channelHelper.formatScope(notifyData.to_scope);
-      //   const from_scope = channelHelper.formatScope(notifyData.from_scope);
-      //   const checked = await channelHelper.checkAllowCreateChannel(from_scope,to_scope);
-      //   if(checked && checked.code && checked.code !== 0){
-      //     context.result = checked;
-      //     return context;
-      //   }
-      //   const channelService = context.app.service('channels');
-      //   const created = await channelService.create({to_scope,from_scope});
-      //   notificationData.channel = created.channel;
-      //   notificationData.contents = notifyData.contents;
-      //   const created2 = await notificationService.create(notificationData);
-      //   context.service.emit( 'notify_' + notifyData.channel, { type: 'notification', data: created2});
-      //}
+      if(channelData){
+        channelData.type = 'notify';
+        const channel = await contextParser.getChannel(channelData);
+        notificationData.channel = { oid: channel._id, path: channel.path, type: channel.type };
+        if ( page ){
+          notificationData.from = { page, users: [user.email] };
+        }
+        if ( operation ) {
+          notificationData.from = 
+          { 
+            operation: {
+              oid: operation._id, 
+              path: operation.path, 
+              org_id: operation.org_id, 
+              org_path: operation.org_path 
+            }, 
+            users: [ user.email ]
+          };
+        }
+        const created = await notificationService.create(notificationData);
+        notificationData.notification_id = created._id;
+        context.service.emit( channel.event_id, { type: 'notify', data: notificationData});
+        context.result = await buildResult.notify({message: 'emit notify event!'});
+      } else {
+        context.result = await buildResult.notify({ code: 202, error: 'please provide channel data!'});
+      }
     }
 
     if(action === 'create-channel' || action === 'new-channel'){

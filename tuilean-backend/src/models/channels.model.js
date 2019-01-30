@@ -9,10 +9,11 @@ module.exports = function (app) {
   const channels = new Schema({
     name: { type: String},
     path: { type: String},
+    event_id: String,
     type: String ,
     tags: [ String ],
     description: { type: String },
-    scope: { admins: [ channel_scope ]} ,
+    admins: [ channel_scope ],
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true
