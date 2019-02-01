@@ -45,16 +45,17 @@ module.exports = function (options = {}) {
         name: 'org-user-admin',
         org_id: o._id,
         org_path: o.path,
-        channels: {
+        notification: {
           allow:[
             {
-              channel: { type: 'notify' },
-              scopes:[
-                {
-                  page:'join-org',
-                  users: ['$self']
-                }
-              ]
+              scope:{
+                pages: [
+                  {
+                    page: 'join-org',
+                    users: ['$self']
+                  }
+                ]
+              }
             }
           ]
         }

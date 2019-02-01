@@ -5,7 +5,7 @@
 module.exports = function (options = {}) {
   return async context => {
     const service = context.service;
-    const event_id = context.data.type + '_' + context.id;
+    const event_id = context.data.type + '_' + context.result._id;
     await service.patch(context.result._id, { event_id });
     return context;
   };

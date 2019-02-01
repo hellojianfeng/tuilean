@@ -99,6 +99,16 @@ module.exports = function(context, options) {
     return channels;
   };
 
+  const getChannel = async ( options ) => {
+    if (options && options._id && options.path && options.type){
+      return options;
+    }
+  };
+
+  const findOrCreateChannel = async ( options ) => {
+    return options;
+  };
+
   return {
 
     filterJoiners,
@@ -169,7 +179,7 @@ module.exports = function(context, options) {
       }
     },
 
-   
+    getChannel, findOrCreateChannel
 
   };
 };

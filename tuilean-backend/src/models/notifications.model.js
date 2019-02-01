@@ -17,17 +17,21 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
-  const { channel_scope } = require('./schemas')(app);
+  const { channel_obj } = require('./schemas')(app);
 
   const notifications = new Schema({
     name: String,
     path: { type: String, required: true },
     tags: { type: String },
     description: { type: String },
-    channel: { oid: { type: Schema.Types.ObjectId }, path: String, type: String },
-    from: {type: channel_scope, required: true } ,
-    to:  [ channel_scope ] ,
-    contents: [contentSchema],
+    from: {
+      channel: channel_obj,
+      contents:[ contentSchema ]
+    },
+    to: {
+      channel: channel_obj,
+      contents:[ contentSchema ]
+    },
     data: { type: Schema.Types.Mixed },
   }, {
     timestamps: true

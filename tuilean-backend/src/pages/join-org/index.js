@@ -16,7 +16,6 @@ module.exports = async function (context, options) {
 
   const buildResult = require('../../utils/js/build-result')(context, options);
   const contextParser = require('../../utils/js/context-parser')(context,options);
-  const channelHelper = require('../../utils/js/channel-helper')(context,options);
   const user = context.params.user;
 
   if (action === 'open'){
@@ -39,48 +38,43 @@ module.exports = async function (context, options) {
     }
   }
 
-  if (action === 'join'){
+  if (action === 'apply-join'){
 
     const { org } = pageData;
-    const { user_self_channels } = await channelHelper.getUserChannels({page: 'join-org'});
-    const operation = await contextParser.getOperation({ path: 'org-user-admin', org});
-
-    user_self_channels.filter( o => {
-      return o.operation.oid.equals(operation._id);
-    });
-
-    let channel = user_self_channels.length > 0 &&  user_self_channels[0];
-    if (!channel){
-      channel = await channelHelper.createChannel({
-        path:'join-org',
-        tags:['join-org'],
-        type: 'notify',
-        creator: { page: 'join-org', users: [user.email]},
-        joiners: [{operation}]
-      });
-    }
 
     return await notifyService.create(
       {
-        page: 'join-org', 
         action: 'send', 
-        channel: channel, 
-        data: {
+        data:{
+          path: 'page-join-org-user-'+user._id,
+          tags: ['apply-join-org'],
           from: {
-            user: { oid: user._id, email: user.email },
-            page: 'join-org',
+            scope: {
+              pages: [
+                {
+                  page: 'join-org',
+                  users: [ user.email ]
+                }
+              ]
+            },
+            contents: [ 
+              { name: 'message', body:'apply-join-org!'},
+              { org }
+            ]
           },
           to: {
-            operation: { 
-              oid: operation._id,
-              path: operation.path,
-              org_id: operation.org_id,
-              org_path: operation.org_path
-            }
-          },
-          path: 'apply-join-org',
-          tags: ['apply-join-org'],
-          contents: [ { name: 'message', path: 'message', body:'apply join org!'}]
+            scope: {
+              operations: [
+                {
+                  operation: { org, operation: 'org-user-admin'}
+                }
+              ]
+            },
+            contents: [ 
+              { name: 'message', body:'apply-join-org!'},
+              { org }
+            ]
+          }
         }
       });
   }

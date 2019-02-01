@@ -6,28 +6,16 @@ module.exports = function (options = {}) {
   return async context => {
     const buildResult = require('../utils/js/build-result')(context,options);
     const channelHelper = require('../utils/js/channel-helper')(context,options);
-    const contextParser = require('../utils/js/context-parser')(context, options);
-    const operationData = context.data.operation;
-    const page = context.data.page;
-    const channelData = context.data.channel;
+    //const contextParser = require('../utils/js/context-parser')(context, options);
+    const notifyHelper = require('../utils/js/notify-helper')(context, options);
     const action = context.data.action || 'open';
-    const notificationData = context.data.data;
+    const notifyData = context.data.data;
 
-    const user = context.params.user;
+    //const user = context.params.user;
 
     const notificationService = context.app.service('notifications');
 
-    const operation = operationData ? await contextParser.getOperation({operation: operationData}) : null;
-
     const channelQuery = { type: 'notify' };
-
-    if (operation){
-      channelQuery.operation = operation;
-    }
-
-    if(page){
-      channelQuery.page = page;
-    }
 
     const user_channels = await channelHelper.getUserChannels(channelQuery);
 
@@ -37,56 +25,62 @@ module.exports = function (options = {}) {
     }
 
     if(action === 'send'){
-      if(channelData){
-        channelData.type = 'notify';
-        const channel = await contextParser.getChannel(channelData);
-        notificationData.channel = { oid: channel._id, path: channel.path, type: channel.type };
-        if ( page ){
-          notificationData.from = { page, users: [user.email] };
-        }
-        if ( operation ) {
-          notificationData.from = 
-          { 
-            operation: {
-              oid: operation._id, 
-              path: operation.path, 
-              org_id: operation.org_id, 
-              org_path: operation.org_path 
-            }, 
-            users: [ user.email ]
-          };
-        }
-        const created = await notificationService.create(notificationData);
-        notificationData.notification_id = created._id;
-        context.service.emit( channel.event_id, { type: 'notify', data: notificationData});
-        context.result = await buildResult.notify({message: 'emit notify event!'});
-      } else {
-        context.result = await buildResult.notify({ code: 202, error: 'please provide channel data!'});
-      }
-    }
+      const { from, to } = notifyData;
+      let from_channel, to_channel;
 
-    if(action === 'create-channel' || action === 'new-channel'){
-      let { creator, joiners, channel } = context.data;
-      const inviter = {};
-      if (creator){
-        let channelPath ='notify';
-        if (creator.operation){
-          inviter.operations = [creator.operation];
-          channelPath += '_' + creator.operation._id;
+      if (from.channel){
+        from_channel = await channelHelper.getChannel(from.channel);
+      }
+
+      if(to.channel){
+        to_channel = await channelHelper.getChannel(to.channel);
+      }
+
+      if(!from_channel){
+        from_channel = await channelHelper.findOrCreateChannel({scope: from, type: 'notify'});
+      }
+
+      if(!to_channel){
+        to_channel = await channelHelper.findOrCreateChannel({scope: to, type: 'notify'});
+      }
+
+      context.result.notifications = {};
+
+      if (from_channel && to_channel){
+        const from_notification = from.notification;
+        const to_notification = to.notification;
+
+        const isAllowNotify = await notifyHelper.filterScope({from_channel, to_channel});
+        if(isAllowNotify){
+          const from_create_data = {
+            channel: {
+              oid: from_channel._id,
+              path: from_channel.path,
+              tags: from_channel.tags,
+              scope_hash: from_channel.scope_hash
+            },
+            path: from_notification.path,
+            tags: from_notification.tags,
+            contents: from_notification.contents
+          };
+          if(from_notification.name){
+            from_create_data.name = from_notification.name;
+          }
+          if(from_notification.name){
+            from_create_data.name = from_notification.name;
+          }
+          const created_from = await notificationService.create(from_create_data);
+          context.service.emit(from_channel.event_id, {notification: created_from});
+          context.result.notifications.from = created_from;
+  
+          const created_to = await notificationService.create({channel: to_channel, contents: to_notification});
+          context.service.emit(to_channel.event_id, {notification: created_to});
+          context.result.notifications.to = created_to;
+        } else {
+          throw new Error('not allow notify!');
         }
-        if (creator.page){
-          inviter.pages = [creator.page];
-          channelPath += '_' + page;
-        }
-        if(creator.user){
-          inviter.users = [creator.user];
-          channelPath += '_' + creator.user._id;
-        }
-        channel = channel || { type: 'notify', path: channelPath };
-        channel.inviter = inviter;
-        channel.joiners = joiners;
-        const created = await channelHelper.createChannel(channel);
-        return context.result = buildResult.notify({created_channel: created});
+      } else {
+        throw new Error('please provide valide from channel data and valid to channel data! ');
       }
     }
 

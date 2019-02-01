@@ -5,7 +5,7 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
-  const { channel_scope } = require('./schemas')(app);
+  const { channel_operation_scope, channel_page_scope } = require('./schemas')(app);
   const channels = new Schema({
     name: { type: String},
     path: { type: String},
@@ -13,7 +13,15 @@ module.exports = function (app) {
     type: String ,
     tags: [ String ],
     description: { type: String },
-    admins: [ channel_scope ],
+    scope: {
+      operations: [ channel_operation_scope ],
+      pages: [ channel_page_scope ]
+    },
+    scope_hash: String,
+    admin_scope: {
+      operations: [ channel_operation_scope ],
+      pages: [ channel_page_scope ]
+    },
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true

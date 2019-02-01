@@ -241,7 +241,7 @@ module.exports = function (context,options={}, refresh=false) {
     if (context.model_parser.current_org){
       return context.model_parser.current_org;
     } else {
-      return context.model_parser.current_org = orgData && await getOrg( orgData ) || context.params.user.current_org && await getOrg ( context.params.user.current_org);
+      return context.model_parser.current_org = orgData && await getOrg( orgData ) || context.params.user && context.params.user.current_org && await getOrg ( context.params.user.current_org);
     }
   };
 
