@@ -45,10 +45,11 @@ module.exports = function (options = {}) {
         name: 'org-user-admin',
         org_id: o._id,
         org_path: o.path,
-        notification: {
-          allow:[
-            {
-              scope:{
+        create_channels: [
+          {
+            scope: '$current_operation',
+            allow:{
+              notify: {
                 pages: [
                   {
                     page: 'join-org',
@@ -57,8 +58,8 @@ module.exports = function (options = {}) {
                 ]
               }
             }
-          ]
-        }
+          }
+        ]
       });
       //administrator permission
       const administrators = await permissionService.create(

@@ -202,7 +202,7 @@ const orgInitialize = async function (context, options = {}) {
         newRoles = newList;
       }
     }
-    
+
     //add sub-orgs
     let newOrgs = [];
     if(runData.orgs && !Array.isArray(runData.orgs) && typeof runData.orgs === 'object'){
@@ -220,7 +220,7 @@ const orgInitialize = async function (context, options = {}) {
         }
         newOrgs = newList;
       }
-      
+
     }
 
     //reset current org for user which is changed by add sub org
@@ -281,7 +281,7 @@ const orgInitialize = async function (context, options = {}) {
         });
       });
     }
-    
+
     const addRoleOperations = require('../../../utils/js/add-role-operations');
     await addRoleOperations(context, postAddRoleOperations,false);
 
@@ -344,6 +344,18 @@ const orgInitialize = async function (context, options = {}) {
 
       if(follows.length > 0){
         await addOrgFollows(context,{follows});
+      }
+    }
+
+    //add channels
+    const channelHelper = require('../../../utils/js/channel-helper');
+    if(runData.channels && Array.isArray(runData.channels)){
+      for(const data of runData.channels){
+        if (data.path && data.scope)
+        {
+          const data = await channelHelper.formatScope({scope: data, org: current_operation_org });
+          await channelHelper.createChannel(data);
+        }
       }
     }
 

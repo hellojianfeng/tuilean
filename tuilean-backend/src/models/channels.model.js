@@ -22,12 +22,18 @@ module.exports = function (app) {
       operations: [ channel_operation_scope ],
       pages: [ channel_page_scope ]
     },
+    allow: {
+      notify:{
+        operations: [ channel_operation_scope ],
+        pages: [ channel_page_scope ]
+      }
+    },
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true
   });
 
-  channels.index({ type: 1, path: 1 });
+  channels.index({ path: 1, scope_hash: 1 },  { unique: true });
 
   return mongooseClient.model('channels', channels);
 };

@@ -1,8 +1,9 @@
 
-
+const objectHash = require('object-hash');
 module.exports = function(context, options) {
 
   const contextParser = require('./context-parser')(context,options);
+  const channelService = context.app.service('channels');
 
   const filterJoiners = ( options ) => {
     let { inviter, joiners, type } = options;
@@ -39,7 +40,12 @@ module.exports = function(context, options) {
     const userService = context.app.service('users');
     const operationService = context.app.service('operations');
 
-    const { scopes, channel } = options;
+    const { channel } = options;
+
+    const scope = channel.scope;
+
+    //add page and page scope
+    const scopes = scope.operations || scope.pages;
     const channels = [];
     for ( const scope of scopes){
       const { page, operation, roles, permissions, users } = scope;
@@ -65,7 +71,7 @@ module.exports = function(context, options) {
                 user.channels.joined.push({channel: { oid: channel._id, path: channel.path} , scopes: [{page, operation,roles, permissions}]});
                 channels.push({page, operation,roles, permissions,user});
               }
-  
+
               await userService.patch(user._id, {channels: user.channels});
             }
           }
@@ -100,86 +106,134 @@ module.exports = function(context, options) {
   };
 
   const getChannel = async ( options ) => {
-    if (options && options._id && options.path && options.type){
-      return options;
+    const channelData = options.channel || options;
+    if (channelData && channelData._id && channelData.path && channelData.scope){
+      return channelData;
+    }
+    if(channelData.scope && channelData.path){
+      const scope_hash = objectHash(channelData.scope);
+      const finds = await channelService.find({query:{scope_hash: scope_hash, path: channelData.path}});
+      if(finds.total === 1){
+        return finds.data[0];
+      }
     }
   };
 
   const findOrCreateChannel = async ( options ) => {
-    return options;
+    const {scope, path} = options;
+    if(scope && path && !path.startsWith('$')){
+      const scope_hash = objectHash(scope);
+      let query = { scope_hash, path};
+      const finds = await channelService.find({query});
+      if(finds.total === 1){
+        return finds.data[0];
+      }
+      return await createChannel(options);
+    } else {
+      return { code: 301, error:'please provide scope and path for create channel!'};
+    }
+  };
+
+  const createChannel = async options => {
+    let { name, path, scope, admins, tags, description, allow } = options;
+    const channelService = context.app.service('channels');
+
+    scope = await formatScope(options);
+
+    if (path && path === '$operation-channel-path'){
+      const operation = scope.operations && scope.operations[0];
+      if(operation && operation.org_path && operation.path){
+        path = 'operation.' + operation.org_path + '.' + operation.path;
+      }
+    }
+
+    if (path && path === '$page-user-channel-path'){
+      const page = scope.pages && scope.pages[0];
+      const user = page && page.users && page.users[0];
+      if(page && user){
+        path = 'page.' + page + '.' + user;
+      }
+    }
+
+    if ( name && !path){
+      path = name;
+    }
+
+    if (!name && path){
+      name = path;
+    }
+
+    if ( !path || !scope ){
+      return { code: 303, error: 'please provide path and scope to create channel!'};
+    }
+
+    if(admins && admins === '$same-as-scope'){
+      admins = scope;
+    }
+
+    const channel =  await channelService.create({admins, scope, tags, description, name, path, allow});
+    await addChannelScopes({channel});
+    return channel;
+  };
+
+  const getUserChannels = async ( options = {} ) => {
+
+    const user = context.params.user;
+
+    const typeChannels = ( owners, type ) => {
+      const channels = [];
+      owners.map ( o => {
+        channels.concat(o.channels.joined.map ( c => {
+          return c.channel.type === type;
+        }));
+      });
+      return channels;
+    };
+
+    const type = options.type || 'notify';
+
+    const { user_operations } = await contextParser.parse();
+
+    const user_operation_channels = typeChannels(user_operations,type);
+    const user_self_channels = typeChannels([user],type);
+
+    const user_all_channels = user_operation_channels.concat(user_self_channels);
+    return { user_all_channels,user_operation_channels,user_self_channels};
+  };
+
+  const joinToChannel = async ( options ) => {
+
+    const joiners = filterJoiners(options);
+
+    if (joiners.length > 0 && options.channel){
+      return await addChannelScopes({channel: options.channel,scopes: joiners});
+    } else {
+      return { code: 300, error: 'no joiners allowed to join channel!'};
+    }
+  };
+
+  const formatScope = async options => {
+    let { scope, org } = options;
+
+    org = org || contextParser.getCurrentOrg();
+
+    if (scope && scope.operations && Array.isArray(scope.operations)){
+      for(const operation of scope.operations){
+        if (operation.org_path === '$current_org' && org){
+          operation.org_path = org.path;
+        }
+      }
+    }
+
+    return scope;
+
   };
 
   return {
 
-    filterJoiners,
+    filterJoiners, createChannel, getUserChannels, formatScope,
 
-    getUserChannels: async ( options = {}) => {
-
-      const user = context.params.user;
-
-      const typeChannels = ( owners, type ) => {
-        const channels = [];
-        owners.map ( o => {
-          channels.concat(o.channels.joined.map ( c => {
-            return c.channel.type === type;
-          }));
-        });
-        return channels;
-      };
-
-      const type = options.type || 'notify';
-
-      const { user_operations } = await contextParser.parse();
-
-      const user_operation_channels = typeChannels(user_operations,type);
-      const user_self_channels = typeChannels([user],type);
-
-      const user_all_channels = user_operation_channels.concat(user_self_channels);
-      return { user_all_channels,user_operation_channels,user_self_channels};
-    },
-
-    createChannel: async ( options ) => {
-      let { creator, joiners, type, name, path, tags, description } = options;
-      const channelService = context.app.service('channels');
-      const { inviter, allow_joiners } = filterJoiners({inviter: creator,joiners, type});
-
-      if ( name && !path){
-        path = name;
-      }
-
-      if (!name && path){
-        name = path;
-      }
-
-      type = type || 'notify';
-
-      const admins = [ creator ];
-
-      allow_joiners.push(inviter);
-
-      //if not find channel, create it
-      if (allow_joiners.length > 0)
-      {
-        const channel =  await channelService.create({admins, type, tags, description, name, path});
-        await addChannelScopes({channel,scopes: allow_joiners});
-        return channel;
-      }
-
-      return { code: 300, error: 'fail to create channel! please check input!'};
-    },
-
-    joinToChannel: async ( options ) => {
-
-      const joiners = filterJoiners(options);
-
-      if (joiners.length > 0 && options.channel){
-        return await addChannelScopes({channel: options.channel,scopes: joiners});
-      } else {
-        return { code: 300, error: 'no joiners allowed to join channel!'};
-      }
-    },
-
-    getChannel, findOrCreateChannel
+    getChannel, findOrCreateChannel, joinToChannel
 
   };
 };

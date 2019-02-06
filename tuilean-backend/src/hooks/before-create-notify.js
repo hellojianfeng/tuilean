@@ -28,54 +28,50 @@ module.exports = function (options = {}) {
       const { from, to } = notifyData;
       let from_channel, to_channel;
 
-      if (from.channel){
-        from_channel = await channelHelper.getChannel(from.channel);
-      }
+      from_channel = await channelHelper.getChannel(from);
 
-      if(to.channel){
-        to_channel = await channelHelper.getChannel(to.channel);
-      }
-
-      if(!from_channel){
-        from_channel = await channelHelper.findOrCreateChannel({scope: from, type: 'notify'});
-      }
-
-      if(!to_channel){
-        to_channel = await channelHelper.findOrCreateChannel({scope: to, type: 'notify'});
-      }
+      to_channel = await channelHelper.getChannel(to);
 
       context.result.notifications = {};
 
       if (from_channel && to_channel){
-        const from_notification = from.notification;
-        const to_notification = to.notification;
 
-        const isAllowNotify = await notifyHelper.filterScope({from_channel, to_channel});
+        const isAllowNotify = await notifyHelper.checkAllowNotify({from_channel, to_channel});
         if(isAllowNotify){
-          const from_create_data = {
+          const from_notification_data = {
             channel: {
               oid: from_channel._id,
               path: from_channel.path,
-              tags: from_channel.tags,
-              scope_hash: from_channel.scope_hash
+              tags: from_channel.tags
             },
-            path: from_notification.path,
-            tags: from_notification.tags,
-            contents: from_notification.contents
+            path: notifyData.path + '-from',
+            tags: notifyData.tags,
+            contents: from.contents
           };
-          if(from_notification.name){
-            from_create_data.name = from_notification.name;
+
+          const to_notification_data = {
+            channel: {
+              oid: from_channel._id,
+              path: from_channel.path,
+              tags: from_channel.tags
+            },
+            path: notifyData.path + '-to',
+            tags: notifyData.tags,
+            contents: from.contents
+          };
+
+          if(notifyData.tags){
+            from_notification_data.tags = notifyData.tags;
+            to_notification_data.tags = notifyData.tags;
           }
-          if(from_notification.name){
-            from_create_data.name = from_notification.name;
-          }
-          const created_from = await notificationService.create(from_create_data);
+
+          const created_from = await notificationService.create(from_notification_data);
           context.service.emit(from_channel.event_id, {notification: created_from});
-          context.result.notifications.from = created_from;
-  
-          const created_to = await notificationService.create({channel: to_channel, contents: to_notification});
+          context.result.notify.from = created_from;
+
+          const created_to = await notificationService.create(to_notification_data);
           context.service.emit(to_channel.event_id, {notification: created_to});
-          context.result.notifications.to = created_to;
+          context.result.notify.to = created_to;
         } else {
           throw new Error('not allow notify!');
         }
