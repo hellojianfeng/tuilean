@@ -348,13 +348,14 @@ const orgInitialize = async function (context, options = {}) {
     }
 
     //add channels
-    const channelHelper = require('../../../utils/js/channel-helper');
+    const channelHelper = require('../../../utils/js/channel-helper')(context,options);
     if(runData.channels && Array.isArray(runData.channels)){
       for(const data of runData.channels){
-        if (data.path && data.scope)
+        let channelData = data;
+        if (channelData.path && channelData.scope)
         {
-          const data = await channelHelper.formatScope({scope: data, org: current_operation_org });
-          await channelHelper.createChannel(data);
+          channelData.scope = await channelHelper.formatScope({scope: channelData.scope, org: current_operation_org });
+          await channelHelper.createChannel(channelData);
         }
       }
     }

@@ -81,14 +81,19 @@
               ]
             },
             "admin_scope": "$same_as_scope",
-            "allow":{
-              "pages":[
-                {
-                  "page":"join-org",
-                  "users":"$one"
-                }
-              ]
-            }
+            "listens":[
+             {
+               "type": "notify",
+               "scope":{
+                 "pages":[
+                   {
+                     "page": "join-org",
+                     "users":["$email"]
+                   }
+                 ]
+               }
+             }
+            ]
           }
         ]
       },

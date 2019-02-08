@@ -5,35 +5,32 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
-  const { channel_operation_scope, channel_page_scope } = require('./schemas')(app);
+  const { channel_scope } = require('./schemas')(app);
+  const listens = new Schema({
+    type: String,
+    path: String,
+    scopes: [ channel_scope ],
+    scopes_hash: String,
+    listen_id: String, //type_channel_id_path
+    description: String,
+    data: { type: Schema.Types.Mixed }
+  }, {_id: false });
   const channels = new Schema({
     name: { type: String},
     path: { type: String},
-    event_id: String,
     type: String ,
     tags: [ String ],
     description: { type: String },
-    scope: {
-      operations: [ channel_operation_scope ],
-      pages: [ channel_page_scope ]
-    },
-    scope_hash: String,
-    admin_scope: {
-      operations: [ channel_operation_scope ],
-      pages: [ channel_page_scope ]
-    },
-    allow: {
-      notify:{
-        operations: [ channel_operation_scope ],
-        pages: [ channel_page_scope ]
-      }
-    },
+    scopes: [ channel_scope ],
+    scopes_hash: String,
+    admin_scopes: [ channel_scope ],
+    listens:[ listens ],
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true
   });
 
-  channels.index({ path: 1, scope_hash: 1 },  { unique: true });
+  channels.index({ path: 1, scopes_hash: 1 },  { unique: true });
 
   return mongooseClient.model('channels', channels);
 };

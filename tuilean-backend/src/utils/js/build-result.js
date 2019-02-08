@@ -39,27 +39,34 @@ module.exports = function (context) {
   };
 
   const notify = async ( result ) => {
-    const operationData = context.data.operation;
-    const orgData = context.data.org;
-    const pageData = context.data.page;
+    const notifyData = context.data.data;
+    let {current_org, org, page, operation } = await contextParser.parse();
     const user = context.params.user;
     const contextResult = {};
 
-    if(operationData && orgData){
-      operationData.org = orgData;
-      const operation = await contextParser.getOperation(operationData);
+    if(operation){
+      contextResult.notifyData = notifyData;
       contextResult.user = {oid: user._id, email: user.email};
       contextResult.operation = {oid: operation._id, path: operation.path, org_id: operation.org_id,org_path: operation.org_path};
       contextResult.result = result;
       //return contextResult;
     }
 
-    if (pageData){
+    if (page){
+      contextResult.notifyData = notifyData;
       contextResult.user = {oid: user._id, email: user.email};
-      contextResult.page = pageData;
+      contextResult.page = page;
       contextResult.result = result;
 
       //return context;
+    }
+
+    if (org || current_org){
+      org = org || current_org;
+      contextResult.notifyData = notifyData;
+      contextResult.user = {oid: user._id, email: user.email};
+      contextResult.org = { oid: org._id, path: org.path};
+      contextResult.result = result;
     }
 
     return contextResult;

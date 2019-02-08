@@ -21,16 +21,23 @@ module.exports = function (app) {
     path: String
   }, { _id: false });
 
-  const scopeSchema = new Schema({
+  const scopeOwner = new Schema({
     operation: orgObj,
+    role: orgObj,
+    permission: orgObj,
+    org: orgObj,
     page: String,
     action: String,
+  },{_id: false});
+
+  const scopeSchema = new Schema({
+    owner: scopeOwner,
     orgs: [ orgSchema ],
     roles:[ orgObj ],
     permissions: [ orgObj ],
     users:[ String ],
     data: { type: Schema.Types.Mixed }
-  });
+  }, { _id: false });
 
   const channel_operation_scope = new Schema({
     operation: orgObj,

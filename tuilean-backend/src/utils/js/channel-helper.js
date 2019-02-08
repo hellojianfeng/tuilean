@@ -4,6 +4,7 @@ module.exports = function(context, options) {
 
   const contextParser = require('./context-parser')(context,options);
   const channelService = context.app.service('channels');
+  const user = context.params.user;
 
   const filterJoiners = ( options ) => {
     let { inviter, joiners, type } = options;
@@ -48,7 +49,7 @@ module.exports = function(context, options) {
     const scopes = scope.operations || scope.pages;
     const channels = [];
     for ( const scope of scopes){
-      const { page, operation, roles, permissions, users } = scope;
+      let { page, operation, roles, permissions, users } = scope;
 
       if ( page || operation ){
         if (users && users.length > 0) {
@@ -80,6 +81,7 @@ module.exports = function(context, options) {
 
         if ( operation)
         {
+          operation = await contextParser.getOperation(operation);
           operation.channels = operation.channels || {};
           operation.channels.joined = operation.channels.joined || [];
           let isNewChannel = true;
@@ -135,7 +137,7 @@ module.exports = function(context, options) {
   };
 
   const createChannel = async options => {
-    let { name, path, scope, admins, tags, description, allow } = options;
+    let { name, path, scope, admin_scope, tags, description, listens } = options;
     const channelService = context.app.service('channels');
 
     scope = await formatScope(options);
@@ -167,11 +169,19 @@ module.exports = function(context, options) {
       return { code: 303, error: 'please provide path and scope to create channel!'};
     }
 
-    if(admins && admins === '$same-as-scope'){
-      admins = scope;
+    if(admin_scope && admin_scope === '$same-as-scope'){
+      admin_scope = scope;
     }
 
-    const channel =  await channelService.create({admins, scope, tags, description, name, path, allow});
+    if ( listens && Array.isArray(listens)){
+      listens.map ( async o => {
+        if (o.scope){
+          o.scope = await formatScope(o);
+        }
+      });
+    }
+
+    const channel =  await channelService.create({admin_scope, scope, tags, description, name, path, listens});
     await addChannelScopes({channel});
     return channel;
   };
@@ -180,25 +190,46 @@ module.exports = function(context, options) {
 
     const user = context.params.user;
 
-    const typeChannels = ( owners, type ) => {
-      const channels = [];
-      owners.map ( o => {
-        channels.concat(o.channels.joined.map ( c => {
-          return c.channel.type === type;
-        }));
-      });
-      return channels;
-    };
-
-    const type = options.type || 'notify';
-
     const { user_operations } = await contextParser.parse();
 
-    const user_operation_channels = typeChannels(user_operations,type);
-    const user_self_channels = typeChannels([user],type);
+    const all_operation_channels = user_operations.map ( o => { return o.channels.joined; });
+    const self_channels = user.channels.joined;
 
-    const user_all_channels = user_operation_channels.concat(user_self_channels);
-    return { user_all_channels,user_operation_channels,user_self_channels};
+    let { org, operation, page } = options;
+
+    org = await contextParser.getOrg(org);
+    operation = await contextParser.getOperation(operation);
+
+    const org_path = typeof org === 'string'? org : typeof org === 'object' && org.path;
+
+    const org_channels = [], operation_channels = [], page_channels = [];
+
+    if (org && all_operation_channels && all_operation_channels.scopes){
+      all_operation_channels.scopes.map( o => {
+        if ( o.operation && o.operation.org_path === org_path){
+          org_channels.push(o);
+        }
+      });
+    }
+
+    if (operation && operation.path && operation.org_path){
+      user_operations.map ( o => {
+        if(o.path === operation.path && o.org_path === operation.org_path){
+          operation_channels.push(o.channels.joined);
+        }
+      });
+    }
+
+    if (page){
+      self_channels.map ( o => {
+        if ( o.scopes && o.scopes.page && o.scopes.page === page ){
+          page_channels.push(o);
+        }
+      });
+    }
+
+    const all_channels = all_operation_channels.concat(self_channels);
+    return { all_channels,all_operation_channels,self_channels, org_channels, operation_channels, page_channels};
   };
 
   const joinToChannel = async ( options ) => {
@@ -215,12 +246,24 @@ module.exports = function(context, options) {
   const formatScope = async options => {
     let { scope, org } = options;
 
-    org = org || contextParser.getCurrentOrg();
+    org = org || await contextParser.getCurrentOrg();
 
     if (scope && scope.operations && Array.isArray(scope.operations)){
-      for(const operation of scope.operations){
-        if (operation.org_path === '$current_org' && org){
-          operation.org_path = org.path;
+      for(const e of scope.operations){
+        if (e.operation.org_path === '$current_org' && org){
+          e.operation.org_path = org.path;
+        }
+      }
+    }
+
+    if ( scope && scope.pages && Array.isArray(scope.pages)){
+      for(const e of scope.pages){
+        if (e.users && Array.isArray(e.users)){
+          e.users.map ( u => {
+            if ( u === '$email'){
+              u = user.email;
+            }
+          });
         }
       }
     }

@@ -6,22 +6,34 @@ module.exports = function (options = {}) {
   return async context => {
     const buildResult = require('../utils/js/build-result')(context,options);
     const channelHelper = require('../utils/js/channel-helper')(context,options);
-    //const contextParser = require('../utils/js/context-parser')(context, options);
+    const contextParser = require('../utils/js/context-parser')(context, options);
     const notifyHelper = require('../utils/js/notify-helper')(context, options);
     const action = context.data.action || 'open';
     const notifyData = context.data.data;
 
     //const user = context.params.user;
+    const { current_org, current_page } = await contextParser.parse();
 
     const notificationService = context.app.service('notifications');
 
-    const channelQuery = { type: 'notify' };
+    const channelQuery = { org: current_org, page: current_page };
 
-    const user_channels = await channelHelper.getUserChannels(channelQuery);
+    const {org_channels,self_channels} = await channelHelper.getUserChannels(channelQuery);
 
     if (action === 'open'){
-      context.result = await buildResult.notify({user_channels});
-      return context;
+      const org_listeners = org_channels.map ( o => {
+        return {
+          listen_id: 'notify_'+ o.channel.oid,
+          channel: o
+        };
+      });
+      const self_listeners = self_channels.map ( o => {
+        return {
+          listen_id: 'notify_'+ o.channel.oid,
+          channel: o
+        };
+      });
+      return context.result = buildResult.notify({org_listeners,self_listeners});
     }
 
     if(action === 'send'){
