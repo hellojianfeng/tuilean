@@ -352,9 +352,8 @@ const orgInitialize = async function (context, options = {}) {
     if(runData.channels && Array.isArray(runData.channels)){
       for(const data of runData.channels){
         let channelData = data;
-        if (channelData.path && channelData.scope)
+        if (channelData.path && channelData.scopes)
         {
-          channelData.scope = await channelHelper.formatScope({scope: channelData.scope, org: current_operation_org });
           await channelHelper.createChannel(channelData);
         }
       }

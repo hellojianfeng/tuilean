@@ -22,6 +22,7 @@ module.exports = function (app) {
   }, { _id: false });
 
   const scopeOwner = new Schema({
+    user: String,
     operation: orgObj,
     role: orgObj,
     permission: orgObj,
@@ -35,6 +36,7 @@ module.exports = function (app) {
     orgs: [ orgSchema ],
     roles:[ orgObj ],
     permissions: [ orgObj ],
+    operations: [ orgObj ],
     users:[ String ],
     data: { type: Schema.Types.Mixed }
   }, { _id: false });
@@ -60,24 +62,19 @@ module.exports = function (app) {
   }, { _id: false });
 
   const channelSchema = new Schema({
-    oid: { type: Schema.Types.ObjectId }, 
-    type: String, 
-    path: String, 
+    oid: { type: Schema.Types.ObjectId },
+    type: String,
+    path: String,
     tags: [ String ],
-    scope_hash: String
+    scopes_hash: String,
+    scopes: [ scopeSchema ]
   }, {_id: false });
 
-  const ownerChannelSchema = new Schema({
-    channel: channelSchema,
-    scopes: [ scopeSchema ],
-    data: { type: Schema.Types.Mixed }
-  });
-
   return {
-    channel_obj: channelSchema, 
-    owner_channel: ownerChannelSchema, 
-    channel_scope: scopeSchema, 
-    compact_org_obj: orgObj, 
+    channel_obj: channelSchema,
+    owner_channel: channelSchema,
+    channel_scope: scopeSchema,
+    compact_org_obj: orgObj,
     compact_org: orgSchema.page,
     channel_operation_scope,
     channel_page_scope

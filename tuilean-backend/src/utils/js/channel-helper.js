@@ -40,81 +40,62 @@ module.exports = function(context, options) {
   const addChannelScopes = async ( options ) => {
     const userService = context.app.service('users');
     const operationService = context.app.service('operations');
-
     const { channel } = options;
 
-    const scope = channel.scope;
+    const scopes = channel.scopes;
 
-    //add page and page scope
-    const scopes = scope.operations || scope.pages;
-    const channels = [];
     for ( const scope of scopes){
-      let { page, operation, roles, permissions, users } = scope;
-
-      if ( page || operation ){
-        if (users && users.length > 0) {
-          for ( const email of users ){
-            const finds = await userService.find({query:{email}});
-            const user = finds.data[0];
-            if (user){
-              user.channels = user.channels || {};
-              user.channels.joined = user.channels.joined || [];
-              let isNewChannel = true;
-              user.channels.joined.map ( o => {
-                if ( o.channel.oid.equals(channel._id)){
-                  //to-do: how to determind scope is exist?
-                  o.scopes.push({page, operation,roles, permissions});
-                  channels.push({page, operation,roles, permissions,user});
-                  isNewChannel = false;
-                }
-              });
-              if(isNewChannel){
-                user.channels.joined.push({channel: { oid: channel._id, path: channel.path} , scopes: [{page, operation,roles, permissions}]});
-                channels.push({page, operation,roles, permissions,user});
-              }
-
-              await userService.patch(user._id, {channels: user.channels});
-            }
-          }
-          continue;
-        }
-
-        if ( operation)
-        {
-          operation = await contextParser.getOperation(operation);
-          operation.channels = operation.channels || {};
-          operation.channels.joined = operation.channels.joined || [];
+      let { owner } = scope;
+      if (owner && owner.user){
+        const finds = await userService.find({query:{email: owner.user}});
+        const user = finds.data[0];
+        if (user){
+          user.channels = user.channels || {};
+          user.channels.joined = user.channels.joined || [];
           let isNewChannel = true;
-          operation.channels.joined.map ( o => {
-            if ( o.channel.oid.equals(channel._id)){
+          user.channels.joined.map ( o => {
+            if ( o.oid.equals(channel._id)){
               //to-do: how to determind scope is exist?
-              o.scopes.push({roles, permissions});
-              channels.push({roles, permissions,operation});
+              o.scopes.push(scope);
               isNewChannel = false;
             }
           });
+
           if(isNewChannel){
-            operation.channels.joined.push({channel: { oid: channel._id, path: channel.path} , scopes: [{roles, permissions}]});
-            channels.push({roles, permissions,operation});
+            user.channels.joined.push({ oid: channel._id, path: channel.path, scopes_hash: channel.scopes_hash, scopes: [scope]});
           }
-          await operationService.patch(operation._id, {channels: operation.channels});
+
+          await userService.patch(user._id, {channels: user.channels});
         }
-      } else {
-        channels.push({code: 201, error: 'must provide operation or page for channel scope!'});
+      }
+
+      if (owner && owner.operation){
+        const operation = await contextParser.getOperation(owner.operation);
+        operation.channels = operation.channels || {};
+        operation.channels.joined = operation.channels.joined || [];
+        let isNewChannel = true;
+        operation.channels.joined.map ( o => {
+          if ( o.oid.equals(channel._id)){
+            o.scopes.push(scope);
+            isNewChannel = false;
+          }
+        });
+        if(isNewChannel){
+          operation.channels.joined.push({oid: channel._id, path: channel.path, scopes_hash: channel.scopes_hash, scopes: [scope]});
+        }
+        await operationService.patch(operation._id, {channels: operation.channels});
       }
     }
-
-    return channels;
   };
 
   const getChannel = async ( options ) => {
     const channelData = options.channel || options;
-    if (channelData && channelData._id && channelData.path && channelData.scope){
+    if (channelData && channelData._id && channelData.path && channelData.scopes && channelData.scopes_hash){
       return channelData;
     }
-    if(channelData.scope && channelData.path){
-      const scope_hash = objectHash(channelData.scope);
-      const finds = await channelService.find({query:{scope_hash: scope_hash, path: channelData.path}});
+    if(channelData.scopes && channelData.path){
+      const scopes_hash = objectHash(channelData.scopes);
+      const finds = await channelService.find({query:{scopes_hash: scopes_hash, path: channelData.path}});
       if(finds.total === 1){
         return finds.data[0];
       }
@@ -137,25 +118,10 @@ module.exports = function(context, options) {
   };
 
   const createChannel = async options => {
-    let { name, path, scope, admin_scope, tags, description, listens } = options;
+    let { name, path, scopes, admin_scopes, tags, description, listens } = options;
     const channelService = context.app.service('channels');
 
-    scope = await formatScope(options);
-
-    if (path && path === '$operation-channel-path'){
-      const operation = scope.operations && scope.operations[0];
-      if(operation && operation.org_path && operation.path){
-        path = 'operation.' + operation.org_path + '.' + operation.path;
-      }
-    }
-
-    if (path && path === '$page-user-channel-path'){
-      const page = scope.pages && scope.pages[0];
-      const user = page && page.users && page.users[0];
-      if(page && user){
-        path = 'page.' + page + '.' + user;
-      }
-    }
+    scopes = await formatScope(options);
 
     if ( name && !path){
       path = name;
@@ -165,23 +131,15 @@ module.exports = function(context, options) {
       name = path;
     }
 
-    if ( !path || !scope ){
+    if ( !path || !scopes ){
       return { code: 303, error: 'please provide path and scope to create channel!'};
     }
 
-    if(admin_scope && admin_scope === '$same-as-scope'){
-      admin_scope = scope;
+    if(admin_scopes && admin_scopes === '$same-as-scopes'){
+      admin_scopes = scopes;
     }
 
-    if ( listens && Array.isArray(listens)){
-      listens.map ( async o => {
-        if (o.scope){
-          o.scope = await formatScope(o);
-        }
-      });
-    }
-
-    const channel =  await channelService.create({admin_scope, scope, tags, description, name, path, listens});
+    const channel =  await channelService.create({admin_scopes, scopes, tags, description, name, path, listens});
     await addChannelScopes({channel});
     return channel;
   };
@@ -192,44 +150,32 @@ module.exports = function(context, options) {
 
     const { user_operations } = await contextParser.parse();
 
-    const all_operation_channels = user_operations.map ( o => { return o.channels.joined; });
+    const operation_channels = user_operations.map ( o => { return o.channels.joined; });
     const self_channels = user.channels.joined;
 
-    let { org, operation, page } = options;
+    let { org } = options;
 
-    org = await contextParser.getOrg(org);
-    operation = await contextParser.getOperation(operation);
+    org = await contextParser.getOrg(org) || await contextParser.getCurrentOrg();
 
     const org_path = typeof org === 'string'? org : typeof org === 'object' && org.path;
 
-    const org_channels = [], operation_channels = [], page_channels = [];
+    //all channels for org, can be channels belong to operation, channels belong to org or channels belong to role etc.
+    const org_channels = [];
 
-    if (org && all_operation_channels && all_operation_channels.scopes){
-      all_operation_channels.scopes.map( o => {
-        if ( o.operation && o.operation.org_path === org_path){
+    if (org && org.channels && org.channels.joined){
+      org_channels.concat(org.channels.joined);
+    }
+
+    //filter operation channels for org
+    if (org && operation_channels && operation_channels.scopes){
+      operation_channels.scopes.map( o => {
+        if ( o.owner && o.owner.operation && o.owner.operation.org_path === org_path){
           org_channels.push(o);
         }
       });
     }
 
-    if (operation && operation.path && operation.org_path){
-      user_operations.map ( o => {
-        if(o.path === operation.path && o.org_path === operation.org_path){
-          operation_channels.push(o.channels.joined);
-        }
-      });
-    }
-
-    if (page){
-      self_channels.map ( o => {
-        if ( o.scopes && o.scopes.page && o.scopes.page === page ){
-          page_channels.push(o);
-        }
-      });
-    }
-
-    const all_channels = all_operation_channels.concat(self_channels);
-    return { all_channels,all_operation_channels,self_channels, org_channels, operation_channels, page_channels};
+    return {self_channels, org_channels, operation_channels};
   };
 
   const joinToChannel = async ( options ) => {
@@ -244,31 +190,31 @@ module.exports = function(context, options) {
   };
 
   const formatScope = async options => {
-    let { scope, org } = options;
+    let { scopes, org } = options;
 
     org = org || await contextParser.getCurrentOrg();
 
-    if (scope && scope.operations && Array.isArray(scope.operations)){
-      for(const e of scope.operations){
-        if (e.operation.org_path === '$current_org' && org){
-          e.operation.org_path = org.path;
-        }
+    scopes = scopes || [];
+
+    for ( const scope of scopes) {
+      if (scope.users && Array.isArray(scope.users)){
+        scope.users.map ( u => {
+          if ( u === '$email'){
+            u = user.email;
+          }
+        });
+      }
+
+      if (scope.owner && scope.owner.operation && scope.owner.operation.org_path === '$current-org'){
+        scope.owner.operation.org_path = org.path;
+      }
+
+      if (scope.owner && scope.owner.user && scope.owner.user === '$current-user'){
+        scope.owner.user = user.email;
       }
     }
 
-    if ( scope && scope.pages && Array.isArray(scope.pages)){
-      for(const e of scope.pages){
-        if (e.users && Array.isArray(e.users)){
-          e.users.map ( u => {
-            if ( u === '$email'){
-              u = user.email;
-            }
-          });
-        }
-      }
-    }
-
-    return scope;
+    return scopes;
 
   };
 

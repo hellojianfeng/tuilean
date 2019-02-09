@@ -5,22 +5,22 @@
 const objectHash = require('object-hash');
 module.exports = function (options = {}) {
   return async context => {
-    const service = context.service;
-    const id = context.result._id;
-    if (context.data.listens && Array.isArray(context.data.listens)){
-      context.data.listens.map ( o => {
-        o.type = o.type || 'notify';
-        if ( o.scope){
-          o.scope_hash = objectHash(o.scope);
-        }
-        o.listen_id = o.type + '_' + id;
-        if ( o.path ){
-          o.listen_id = o.listen_id + '_' + o.path;
-        }
-        return o;
-      });
-    }
-    await service.patch(context.result._id, { listens: context.data.listens });
+    // const service = context.service;
+    // const id = context.result._id;
+    // if (context.data.listens && Array.isArray(context.data.listens)){
+    //   context.data.listens.map ( o => {
+    //     o.type = o.type || 'notify';
+    //     if ( o.scopes){
+    //       o.scopes_hash = objectHash(o.scopes);
+    //     }
+    //     o.listen_id = o.type + '_' + id;
+    //     if ( o.path ){
+    //       o.listen_id = o.listen_id + '_' + o.path;
+    //     }
+    //     return o;
+    //   });
+    // }
+    // await service.patch(context.result._id, { listens: context.data.listens });
     return context;
   };
 };

@@ -69,30 +69,30 @@
         },
         "channels":[
           {
-            "path":"$operation_channel_path",
-            "scope":{
-              "operations":[
-                {
+            "path":"org-user-admin-channel",
+            "scopes":[
+              {
+                "owner":{
                   "operation":{
                     "path":"org-user-admin",
-                    "org_path":"$current_org"
+                    "org_path":"$current-org"
                   }
                 }
-              ]
-            },
-            "admin_scope": "$same_as_scope",
+              }
+            ],
+            "admin_scopes": "$same-as-scopes",
             "listens":[
              {
-               "type": "notify",
-               "scope":{
-                 "pages":[
-                   {
-                     "page": "join-org",
-                     "users":["$email"]
-                   }
-                 ]
-               }
-             }
+                "type": "notify",
+                "scopes":[
+                  {
+                    "owner":{
+                      "user": "$current-user"
+                    },
+                    "pages":["join-org"]
+                  }
+                ]
+              }
             ]
           }
         ]

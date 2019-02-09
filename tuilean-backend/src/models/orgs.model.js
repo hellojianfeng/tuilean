@@ -1,5 +1,5 @@
 // orgs-model.js - A mongoose model
-// 
+//
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
@@ -12,20 +12,20 @@ module.exports = function (app) {
   });
 
   const followRoleSchema = new Schema({
-    oid: Schema.Types.ObjectId, 
+    oid: Schema.Types.ObjectId,
     path: String,
     data: { type: Schema.Types.Mixed }
   });
 
   const followPermissionSchema = new Schema({
-    oid: Schema.Types.ObjectId, 
+    oid: Schema.Types.ObjectId,
     path: String,
     data: { type: Schema.Types.Mixed }
   });
 
   const followOrgSchema = new Schema({
-    org_id: { 
-      type: Schema.Types.ObjectId, 
+    org_id: {
+      type: Schema.Types.ObjectId,
     },
     org_path: String,
     tags: [String],
@@ -34,12 +34,14 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
+  const { owner_channel } = require('./schemas')(app);
+
   const orgs = new Schema({
     path: { type: String, unique: true }, // # sperated string, for example, company1#department1#office1, default is same as name
     name: { type: String },
     display_name: { type: String },
     description: { type: String },
-    type: { 
+    type: {
       oid: { type: Schema.Types.ObjectId },
       path: { type: String },
       data: { type: Schema.Types.Mixed }
@@ -47,6 +49,13 @@ module.exports = function (app) {
     tags: { type: String },
     profiles: [ orgProfile ],
     follows: [followOrgSchema],
+    channels: {
+      allow: [ owner_channel ],
+      joined: [ owner_channel ],
+      joining: [ owner_channel],
+      inviting: [ owner_channel ],
+      rejected: [ owner_channel ]
+    },
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true

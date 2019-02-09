@@ -5,8 +5,8 @@
 const objectHash = require('object-hash');
 module.exports = function () {
   return async context => {
-    if (context.data.scope){
-      context.data.scope_hash = objectHash(context.data.scope);
+    if (context.data.scopes){
+      context.data.scopes_hash = objectHash(context.data.scopes);
     }
     return context;
   };
