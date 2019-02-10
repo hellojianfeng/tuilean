@@ -11,10 +11,10 @@ module.exports = function (app) {
     path: String,
     scopes: [ channel_scope ],
     scopes_hash: String,
-    listen_id: String, //type_channel_id_path
     description: String,
     data: { type: Schema.Types.Mixed }
   }, {_id: false });
+
   const channels = new Schema({
     name: { type: String},
     path: { type: String},
@@ -24,7 +24,9 @@ module.exports = function (app) {
     scopes: [ channel_scope ],
     scopes_hash: String,
     admin_scopes: [ channel_scope ],
-    listens:[ listens ],
+    allow: {
+      listens: [ listens ]
+    },
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true

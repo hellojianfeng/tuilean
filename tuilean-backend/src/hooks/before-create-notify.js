@@ -7,7 +7,7 @@ module.exports = function (options = {}) {
     const buildResult = require('../utils/js/build-result')(context,options);
     const channelHelper = require('../utils/js/channel-helper')(context,options);
     const contextParser = require('../utils/js/context-parser')(context, options);
-    const notifyHelper = require('../utils/js/notify-helper')(context, options);
+    //const notifyHelper = require('../utils/js/notify-helper')(context, options);
     const action = context.data.action || 'open';
     const notifyData = context.data.data;
 
@@ -37,61 +37,23 @@ module.exports = function (options = {}) {
     }
 
     if(action === 'send'){
-      const { from, to } = notifyData;
-      let from_channel, to_channel;
-
-      from_channel = await channelHelper.getChannel(from);
-
-      to_channel = await channelHelper.getChannel(to);
-
+      let { from_channel, to_channel, listen, contents } = notifyData;
+      from_channel = await channelHelper.getChannel(from_channel);
+      to_channel = await channelHelper.getChannel(to_channel);
       context.result.notifications = {};
 
-      if (from_channel && to_channel){
-
-        const isAllowNotify = await notifyHelper.checkAllowNotify({from_channel, to_channel});
-        if(isAllowNotify){
-          const from_notification_data = {
-            channel: {
-              oid: from_channel._id,
-              path: from_channel.path,
-              tags: from_channel.tags
-            },
-            path: notifyData.path + '-from',
-            tags: notifyData.tags,
-            contents: from.contents
-          };
-
-          const to_notification_data = {
-            channel: {
-              oid: from_channel._id,
-              path: from_channel.path,
-              tags: from_channel.tags
-            },
-            path: notifyData.path + '-to',
-            tags: notifyData.tags,
-            contents: from.contents
-          };
-
-          if(notifyData.tags){
-            from_notification_data.tags = notifyData.tags;
-            to_notification_data.tags = notifyData.tags;
-          }
-
-          const created_from = await notificationService.create(from_notification_data);
-          context.service.emit(from_channel.event_id, {notification: created_from});
-          context.result.notify.from = created_from;
-
-          const created_to = await notificationService.create(to_notification_data);
-          context.service.emit(to_channel.event_id, {notification: created_to});
-          context.result.notify.to = created_to;
+      if (from_channel && to_channel && listen && listen.type && listen.path && contents){
+        if (await channelHelper.checkAllowListen(notifyData)){
+          const created_to = await notificationService.create(notifyData);
+          const event_id = listen.type + '-'+ listen.path + '-' + to_channel._id;
+          context.service.emit(event_id, {data: created_to});
+          context.result.notify = created_to;
         } else {
           throw new Error('not allow notify!');
         }
       } else {
-        throw new Error('please provide valide from channel data and valid to channel data! ');
+        throw new Error('please check input!');
       }
     }
-
-    return context;
   };
 };

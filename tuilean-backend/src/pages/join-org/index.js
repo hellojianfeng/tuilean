@@ -12,8 +12,8 @@ module.exports = async function (context, options) {
   const action = context.data.action || 'open';
 
   const orgService = context.app.service('orgs');
-  const notifyService = context.app.service('notify');
-  const channelHelper = require('../utils/js/channel-helper')(context,options);
+  const channelHelper = require('../../utils/js/channel-helper')(context,options);
+  const notifyHelper = require('../../utils/js/notify-helper')(context,options);
 
   const buildResult = require('../../utils/js/build-result')(context, options);
   const contextParser = require('../../utils/js/context-parser')(context,options);
@@ -44,51 +44,51 @@ module.exports = async function (context, options) {
     const { org } = pageData;
 
     const to_channel = await channelHelper.getChannel({
-      scope: {
-        operations: [
+      path: 'org-user-admin-channel',
+      scopes:
+        [
           {
-            operation: { org, operation: 'org-user-admin'}
+            owner: {
+              operation: { org, operation: 'org-user-admin'}
+            }
           }
         ]
-      },
     });
 
     const from_channel = await channelHelper.findOrCreateChannel({
-      path:'$page-user-channel-path',
-      scope: {
-        pages: [
+      path:'join-org-'+ user.email,
+      scopes: [
+        {
+          owner: {
+            user: user.email
+          },
+          pages: ['join-org'],
+        }
+      ],
+      allow: {
+        listens: [
           {
-            page: 'join-org',
-            users: [ user.email ]
+            type: 'notify',
+            path: 'join-org',
+            owner: {
+              operation: { org, operation: 'org-user-admin'}
+            }
           }
         ]
-      },
+      }
     });
 
     if ( from_channel && to_channel) {
-      return await notifyService.create(
-        {
-          action: 'send',
-          data:{
-            from: {
-              channel: from_channel,
-              contents: [
-                { name: 'message', body:'apply-join-org, please waiting for approving!'},
-                { org }
-              ]
-            },
-            to: {
-              channel:to_channel,
-              contents: [
-                { name: 'message', body:'apply-join-org, please process this request!'},
-                { org }
-              ]
-            }
-          }
-        });
+      return await notifyHelper.sendNotify({
+        from_channel, to_channel, listen: { type: 'notify', path: 'join-org'},
+        contents: [
+          { name: 'message', body:'apply-join-org, please process this request!'},
+          { org }
+        ]
+      });
     }
   }
 
-  return context;
+  return { code: 300, error: 'no action is executed!'};
 };
 

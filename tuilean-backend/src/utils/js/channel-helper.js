@@ -37,6 +37,94 @@ module.exports = function(context, options) {
     return { inviter, allow_joiners, joiners };
   };
 
+  //check scopes is allowed by allow_scopes
+  const checkAllowScopes = ( options ) => {
+
+    const checkAllowUsers = ( options ) => {
+      const check_users = options.check_users || [];
+      const allow_users = options.allow_users || [];
+
+      if (allow_users === '$any'){
+        return true;
+      }
+
+      if (allow_users === '$one' && Array.isArray(check_users) && check_users.length === 1){
+        return true;
+      }
+
+      if (Array.isArray(allow_users) && Array.isArray(check_users)){
+        let isAllow = false;
+        check_users.map ( c_user => {
+          if ( allow_users.includes(c_user)){
+            isAllow = true;
+          }
+        });
+        return isAllow;
+      }
+
+      return false;
+    };
+
+    const checkAllowPages = ( options ) => {
+      const checks = options.check_pages || [];
+      const allows = options.allow_pages || [];
+
+      if (allows === '$any'){
+        return true;
+      }
+
+      if (Array.isArray(allows) && Array.isArray(checks)){
+        let isAllow = false;
+        checks.map ( check => {
+          if ( allows.includes(check)){
+            isAllow = true;
+          }
+        });
+        return isAllow;
+      }
+
+      return false;
+    };
+
+    const check_scopes = options.check_scopes || [];
+    const allow_scopes = options.allow_scopes || [];
+    let isAllow = false;
+
+    check_scopes.map ( c_scope => {
+      if (c_scope.owner && c_scope.owner.operation){
+        allow_scopes.map ( a_scope => {
+          if (a_scope && a_scope.owner && a_scope.owner.operation){
+            if ( c_scope.owner.operation.toString() === a_scope.owner.operation.toString() || a_scope.owner.operation === '$any'){
+              isAllow = true;
+              if (a_scope.users && ! c_scope.users){
+                isAllow = false;
+              }
+              if (a_scope.users && c_scope.users && !checkAllowUsers({check_users: c_scope.users, allow_users: a_scope.users})){
+                isAllow = false;
+              }
+            }
+          }
+        });
+      }
+      if (c_scope.owner && c_scope.owner.user){
+        allow_scopes.map ( a_scope => {
+          if (a_scope && a_scope.owner && a_scope.owner.user){
+            if ( c_scope.owner.user === a_scope.owner.user || a_scope.owner.user === '$any'){
+              isAllow = true;
+              if (a_scope.pages && ! c_scope.pages){
+                isAllow = false;
+              }
+              if (a_scope.pages && c_scope.pages && !checkAllowPages({check_pages: c_scope.pages, allow_pages: a_scope.pages})){
+                isAllow = false;
+              }
+            }
+          }
+        });
+      }
+    });
+    return isAllow;
+  };
+
   const addChannelScopes = async ( options ) => {
     const userService = context.app.service('users');
     const operationService = context.app.service('operations');
@@ -103,10 +191,10 @@ module.exports = function(context, options) {
   };
 
   const findOrCreateChannel = async ( options ) => {
-    const {scope, path} = options;
-    if(scope && path && !path.startsWith('$')){
-      const scope_hash = objectHash(scope);
-      let query = { scope_hash, path};
+    const {scopes, path} = options;
+    if(scopes && path && !path.startsWith('$')){
+      const scopes_hash = objectHash(scopes);
+      let query = { scopes_hash, path};
       const finds = await channelService.find({query});
       if(finds.total === 1){
         return finds.data[0];
@@ -118,7 +206,7 @@ module.exports = function(context, options) {
   };
 
   const createChannel = async options => {
-    let { name, path, scopes, admin_scopes, tags, description, listens } = options;
+    let { name, path, scopes, admin_scopes, tags, description, allow } = options;
     const channelService = context.app.service('channels');
 
     scopes = await formatScope(options);
@@ -139,7 +227,7 @@ module.exports = function(context, options) {
       admin_scopes = scopes;
     }
 
-    const channel =  await channelService.create({admin_scopes, scopes, tags, description, name, path, listens});
+    const channel =  await channelService.create({admin_scopes, scopes, tags, description, name, path, allow});
     await addChannelScopes({channel});
     return channel;
   };
@@ -218,11 +306,34 @@ module.exports = function(context, options) {
 
   };
 
+  const checkAllowListen = async options => {
+    let {from_channel, to_channel, listen} = options;
+    from_channel = await getChannel(from_channel);
+    to_channel = await getChannel(to_channel);
+
+    if ( from_channel && to_channel && listen ){
+      let listens = to_channel && to_channel.allow && to_channel.allow.listens || [];
+
+      listens = listens.map ( alisten => {
+        if (alisten.type === listen.type ){
+          if (alisten.path === listen.path && alisten.scopes_hash === from_channel.scopes_hash){
+            return alisten;
+          }
+          if (alisten.path === listen.path && alisten.scopes && from_channel.scopes){
+            return checkAllowScopes({check_scopes: from_channel.scopes, allow_scopes: listen.scopes});
+          }
+        }
+      });
+      return listens.length > 0;
+    }
+    return false;
+  };
+
   return {
 
     filterJoiners, createChannel, getUserChannels, formatScope,
 
-    getChannel, findOrCreateChannel, joinToChannel
+    getChannel, findOrCreateChannel, joinToChannel, checkAllowScopes, checkAllowListen
 
   };
 };

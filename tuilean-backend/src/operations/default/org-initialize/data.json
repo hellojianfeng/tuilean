@@ -81,19 +81,22 @@
               }
             ],
             "admin_scopes": "$same-as-scopes",
-            "listens":[
-             {
-                "type": "notify",
-                "scopes":[
-                  {
-                    "owner":{
-                      "user": "$current-user"
-                    },
-                    "pages":["join-org"]
-                  }
-                ]
-              }
-            ]
+            "allow":{
+              "listens":[
+                {
+                   "type": "notify",
+                   "path": "join-org",
+                   "scopes":[
+                     {
+                       "owner":{
+                         "user": "$current-user"
+                       },
+                       "pages":["join-org"]
+                     }
+                   ]
+                 }
+               ]
+            }
           }
         ]
       },

@@ -38,6 +38,7 @@ module.exports = function (app) {
     permissions: [ orgObj ],
     operations: [ orgObj ],
     users:[ String ],
+    pages: [ String ],
     data: { type: Schema.Types.Mixed }
   }, { _id: false });
 
