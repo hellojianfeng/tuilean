@@ -24,13 +24,12 @@ module.exports = function (app) {
     path: { type: String, required: true },
     tags: { type: String },
     description: { type: String },
-    from: {
-      channel: channel_obj,
-      contents:[ contentSchema ]
-    },
-    to: {
-      channel: channel_obj,
-      contents:[ contentSchema ]
+    from_channel: channel_obj,
+    to_channel: channel_obj,
+    contents: [ contentSchema ],
+    sender: {
+      _id: { type: Schema.Types.ObjectId },
+      email: String
     },
     data: { type: Schema.Types.Mixed },
   }, {

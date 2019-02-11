@@ -181,9 +181,11 @@ module.exports = function(context, options) {
     if (channelData && channelData._id && channelData.path && channelData.scopes && channelData.scopes_hash){
       return channelData;
     }
-    if(channelData.scopes && channelData.path){
-      const scopes_hash = objectHash(channelData.scopes);
-      const finds = await channelService.find({query:{scopes_hash: scopes_hash, path: channelData.path}});
+    const {scopes, path} = channelData;
+    if(scopes && path && !path.startsWith('$')){
+      const scopes_hash = objectHash(scopes);
+      let query = { scopes_hash, path};
+      const finds = await channelService.find({query});
       if(finds.total === 1){
         return finds.data[0];
       }

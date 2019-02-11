@@ -366,7 +366,8 @@ module.exports = function (context,options={}, refresh=false) {
   const getOrgUserPermissions = async ( options={} ) => {
     const user = options.user || context.params.user;
     const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
-    const idList = user.permissions.map ( p => {
+    const permissions = user && user.permissions || [];
+    const idList = permissions.map ( p => {
       if (p.org_path === org.path)
       {return p.oid;}
     });

@@ -49,7 +49,7 @@ module.exports = async function (context, options) {
         [
           {
             owner: {
-              operation: { org, operation: 'org-user-admin'}
+              operation: { path: 'org-user-admin', org_path: org}
             }
           }
         ]
@@ -80,6 +80,7 @@ module.exports = async function (context, options) {
 
     if ( from_channel && to_channel) {
       return await notifyHelper.sendNotify({
+        path: 'apply-join-org', tags: [ 'apply-join-org'],
         from_channel, to_channel, listen: { type: 'notify', path: 'join-org'},
         contents: [
           { name: 'message', body:'apply-join-org, please process this request!'},

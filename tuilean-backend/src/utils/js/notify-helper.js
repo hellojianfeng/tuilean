@@ -12,7 +12,7 @@ module.exports = function(context) {
 
   const sendNotify = async options => {
     const notifyService = context.app.service('notify');
-    return await notifyService.create({action: 'send', data: options});
+    return await notifyService.create({action: 'send', data: options},context.params);
   };
 
   return {sendNotify };

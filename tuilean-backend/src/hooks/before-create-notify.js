@@ -40,14 +40,15 @@ module.exports = function (options = {}) {
       let { from_channel, to_channel, listen, contents } = notifyData;
       from_channel = await channelHelper.getChannel(from_channel);
       to_channel = await channelHelper.getChannel(to_channel);
-      context.result.notifications = {};
 
       if (from_channel && to_channel && listen && listen.type && listen.path && contents){
         if (await channelHelper.checkAllowListen(notifyData)){
+          notifyData.sender = context.params.user;
           const created_to = await notificationService.create(notifyData);
           const event_id = listen.type + '-'+ listen.path + '-' + to_channel._id;
           context.service.emit(event_id, {data: created_to});
-          context.result.notify = created_to;
+          context.result = context.result || {};
+          context.result =  Object.assign(context.result, { notification: created_to, emit: event_id});
         } else {
           throw new Error('not allow notify!');
         }
