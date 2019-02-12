@@ -1,15 +1,15 @@
-// go-operation-model.js - A mongoose model
-// 
+// do-operation-model.js - A mongoose model
+//
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const user = new Schema({
-    oid: { type: Schema.Types.ObjectId },
+    _id: { type: Schema.Types.ObjectId },
     email: String
   });
-  const goOperation = new Schema({
+  const doOperation = new Schema({
     operation: String,
     operation_id: { type: Schema.Types.ObjectId },
     org_id: { type: Schema.Types.ObjectId },
@@ -22,5 +22,5 @@ module.exports = function (app) {
     timestamps: true
   });
 
-  return mongooseClient.model('goOperation', goOperation);
+  return mongooseClient.model('doOperation', doOperation);
 };

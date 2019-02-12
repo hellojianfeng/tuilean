@@ -1,11 +1,13 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
-const beforeCreateGoOperation = require('../../hooks/before-create-go-operation');
+
+const beforeCreatenotify = require('../../hooks/before-create-notify');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
     find: [],
     get: [],
-    create: [ beforeCreateGoOperation() ],
+    create: [beforeCreatenotify()],
     update: [],
     patch: [],
     remove: []

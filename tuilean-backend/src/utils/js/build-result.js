@@ -1,6 +1,8 @@
 
 module.exports = function (context) {
 
+  const contextParser = require('./context-parser')(context);
+
   const pageResult = async ( result ) => {
 
     const pageName = context.data.page;
@@ -13,14 +15,12 @@ module.exports = function (context) {
     return  {
       page: pageName,
       action: action,
-      user: {oid: user._id, email: user.email},
+      user: {_id: user._id, email: user.email},
       result
     };
   };
 
   const operationResult = async ( result ) => {
-
-    const contextParser = require('./context-parser')(context);
 
     const { current_operation } = await contextParser.parse();
 
@@ -31,13 +31,27 @@ module.exports = function (context) {
     const user = context.params.user;
 
     return  {
-      operation: { oid: current_operation._id, path: current_operation.path, org_id: current_operation.org_id, org_path: current_operation.org_path},
+      operation: { _id: current_operation._id, path: current_operation.path, org_id: current_operation.org_id, org_path: current_operation.org_path},
       action: action,
-      user: {oid: user._id, email: user.email},
+      user: {_id: user._id, email: user.email},
       result
     };
   };
 
-  return { page: pageResult, operation: operationResult};
+  const notify = ( result ) => {
+    const user = context.params.user;
+    const contextResult = {
+      url: '/notify',
+      method: 'POST',
+      action: context.data.action || 'open',
+      user: {_id: user._id, email: user.email},
+      data: context.data.data,
+      result
+    };
+
+    return contextResult;
+  };
+
+  return { page: pageResult, operation: operationResult, notify};
 };
 

@@ -1,11 +1,15 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 
+const beforeCreateChannel = require('../../hooks/before-create-channel');
+
+const afterCreateChannel = require('../../hooks/after-create-channel');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
     find: [],
     get: [],
-    create: [],
+    create: [beforeCreateChannel()],
     update: [],
     patch: [],
     remove: []
@@ -15,7 +19,7 @@ module.exports = {
     all: [],
     find: [],
     get: [],
-    create: [],
+    create: [afterCreateChannel()],
     update: [],
     patch: [],
     remove: []

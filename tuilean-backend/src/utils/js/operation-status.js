@@ -9,7 +9,7 @@ module.exports = function (context, options={}) {
     operation = await contextParser.getOperation(operation);
 
     if ( operation && operation._id){
-      const runService = context.app.service('go-operation');
+      const runService = context.app.service('do-operation');
       const query = {
         'operation_id':operation._id
       };

@@ -42,7 +42,7 @@ module.exports = function () {
         }
 
         org.type = {
-          oid: oType._id,
+          _id: oType._id,
           path: oType.path
         };
       }

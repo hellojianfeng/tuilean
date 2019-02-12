@@ -66,7 +66,39 @@
             "roles": ["everyone"],
             "permissions":["followone"]
           }
-        }
+        },
+        "channels":[
+          {
+            "path":"org-user-admin-channel",
+            "scopes":[
+              {
+                "owner":{
+                  "operation":{
+                    "path":"org-user-admin",
+                    "org_path":"$current-org"
+                  }
+                }
+              }
+            ],
+            "admin_scopes": "$same-as-scopes",
+            "allow":{
+              "listens":[
+                {
+                   "type": "notify",
+                   "path": "join-org",
+                   "scopes":[
+                     {
+                       "owner":{
+                         "user": "$current-user"
+                       },
+                       "pages":["join-org"]
+                     }
+                   ]
+                 }
+               ]
+            }
+          }
+        ]
       },
       "company.clean":{
         "permissions":[

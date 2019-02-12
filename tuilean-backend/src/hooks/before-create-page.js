@@ -21,7 +21,7 @@ module.exports = function (options = {}) {
         if (!context.result){
           context.data.result = doResult;
           context.data.page = page,
-          context.data.user = { oid: context.params.user._id, email: context.params.user.email };
+          context.data.user = { _id: context.params.user._id, email: context.params.user.email };
         }
       } else {
         throw new Error('index.js not exist for page of '+ page );

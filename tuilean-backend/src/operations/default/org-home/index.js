@@ -15,7 +15,7 @@ module.exports = async function (context, options = {}) {
   const {user_operations, everyone_role_operations, current_operation_org} = await contextParser.parse();
 
   const userService = context.app.service('users');
-  await userService.patch(user._id, { current_org: {oid: current_operation_org._id, path: current_operation_org.path}});
+  await userService.patch(user._id, { current_org: {_id: current_operation_org._id, path: current_operation_org.path}});
 
   if (action === 'open'){
 
@@ -37,7 +37,7 @@ module.exports = async function (context, options = {}) {
     }
 
     context.result = await buildResult.operation({operations: allOperations});
-  
+
     return context;
   }
 

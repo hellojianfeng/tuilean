@@ -1,8 +1,8 @@
 const assert = require('assert');
 const feathers = require('@feathersjs/feathers');
-const beforeCreatedoOperation = require('../../src/hooks/before-create-do-operation');
+const afterCreateNotification = require('../../src/hooks/after-create-notification');
 
-describe('\'before-create-do-operation\' hook', () => {
+describe('\'after-create-notification\' hook', () => {
   let app;
 
   beforeEach(() => {
@@ -15,7 +15,7 @@ describe('\'before-create-do-operation\' hook', () => {
     });
 
     app.service('dummy').hooks({
-      before: beforeCreatedoOperation()
+      after: afterCreateNotification()
     });
   });
 

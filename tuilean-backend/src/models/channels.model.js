@@ -1,15 +1,38 @@
 // channels-model.js - A mongoose model
-// 
+//
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
+  const { channel_scope } = require('./schemas')(app);
+  const listens = new Schema({
+    type: String,
+    path: String,
+    scopes: [ channel_scope ],
+    scopes_hash: String,
+    description: String,
+    data: { type: Schema.Types.Mixed }
+  }, {_id: false });
+
   const channels = new Schema({
-    text: { type: String, required: true }
+    name: { type: String},
+    path: { type: String},
+    type: String ,
+    tags: [ String ],
+    description: { type: String },
+    scopes: [ channel_scope ],
+    scopes_hash: String,
+    admin_scopes: [ channel_scope ],
+    allow: {
+      listens: [ listens ]
+    },
+    data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true
   });
+
+  channels.index({ path: 1, scopes_hash: 1 },  { unique: true });
 
   return mongooseClient.model('channels', channels);
 };

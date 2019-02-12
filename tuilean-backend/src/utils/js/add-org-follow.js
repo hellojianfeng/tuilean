@@ -1,11 +1,11 @@
 
 /**
- * input format: 
+ * input format:
  *  {
- *    org:{ path(or oid) of org },
+ *    org:{ path(or _id) of org },
  *    follow: {
- *      roles: [ path(or oid) of role ],
- *      permissions: [ path(or oid) of permission]
+ *      roles: [ path(or _id) of role ],
+ *      permissions: [ path(or _id) of permission]
  *    }
  *  }
  */
@@ -21,25 +21,25 @@ module.exports = async function (context, options = {}) {
   const followData = options && options.follow || context && context.data && context.data.data && context.data.data.follow;
 
   const contextParser = require('./context-parser')(context,options);
-  const org = await contextParser.getOrg({org: followData.org_path}); 
+  const org = await contextParser.getOrg({org: followData.org_path});
   const current_org = await contextParser.getCurrentOrg();
 
   const newRoles = [];
   if (followData && followData.roles){
     for ( const r of followData.roles){
-      if (typeof r === 'object' && r.oid && r.path){
+      if (typeof r === 'object' && r._id && r.path){
         newRoles.push(r);
         continue;
       }
       let role;
       if(typeof r === 'string'){
-        role = await contextParser.getRole({ role: { path: r, org: current_org }});
+        role = await contextParser.getRole({ path: r, org: current_org });
       }
       if (typeof r === 'object' && r._id && r.path){
         role = r;
       }
       if(role && role._id && role.path){
-        newRoles.push({oid: role._id, path: role.path});
+        newRoles.push({_id: role._id, path: role.path});
       }
     }
   }
@@ -47,19 +47,19 @@ module.exports = async function (context, options = {}) {
   const newPermissions = [];
   if (followData && followData.permissions){
     for ( const p of followData.permissions){
-      if (typeof p === 'object' && p.oid && p.path){
+      if (typeof p === 'object' && p._id && p.path){
         newPermissions.push(p);
         continue;
       }
       let permission;
       if(typeof p === 'string'){
-        permission = await contextParser.getPermission({ role: { path: p, org:current_org }});
+        permission = await contextParser.getPermission({ path: p, org });
       }
       if (typeof p === 'object' && p._id && p.path){
         permission = p;
       }
       if(permission && permission._id && permission.path){
-        newPermissions.push({oid: permission._id, path: permission.path});
+        newPermissions.push({_id: permission._id, path: permission.path});
       }
     }
   }
