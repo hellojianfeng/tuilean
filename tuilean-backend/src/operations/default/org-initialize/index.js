@@ -14,7 +14,7 @@ const orgInitialize = async function (context, options = {}) {
 
   const { current_operation, current_operation_org } = await contextParser.parse();
 
-  const orgId = current_operation_org && current_operation_org._id || user.current_org && user.current_org.oid;
+  const orgId = current_operation_org && current_operation_org._id || user.current_org && user.current_org._id;
 
   const operation = current_operation;
 
@@ -65,7 +65,7 @@ const orgInitialize = async function (context, options = {}) {
     const runOperations = runData.operations;
     if(runOperations && !Array.isArray(runOperations) && typeof runOperations === 'object'){
       Object.values(runOperations).map( o => {
-      //o.org = { oid: orgId, path: org.path };
+      //o.org = { _id: orgId, path: org.path };
         o.org_id = orgId;
         o.org_path = org.path;
         if(o.roles && Array.isArray(o.roles)){
@@ -122,7 +122,7 @@ const orgInitialize = async function (context, options = {}) {
             newOperations.map ( no => {
               if (no.path === path){
                 permitOperations.push({
-                  oid: no._id,
+                  _id: no._id,
                   path: no.path
                 });
               }
@@ -169,7 +169,7 @@ const orgInitialize = async function (context, options = {}) {
             newPermissions.map ( no => {
               if (no.path === path){
                 rolePermissions.push({
-                  oid: no._id,
+                  _id: no._id,
                   path: no.path
                 });
               }
@@ -183,7 +183,7 @@ const orgInitialize = async function (context, options = {}) {
             newOperations.map ( no => {
               if (no.path === path){
                 roleOperations.push({
-                  oid: no._id,
+                  _id: no._id,
                   path: no.path
                 });
               }
@@ -224,10 +224,10 @@ const orgInitialize = async function (context, options = {}) {
     }
 
     //reset current org for user which is changed by add sub org
-    context.params.user.current_org = {oid: orgId, path: org.path};
+    context.params.user.current_org = {_id: orgId, path: org.path};
     const userService = context.app.service('users');
     await userService.patch(context.params.user._id, {
-      current_org: {oid: orgId, path: org.path}
+      current_org: {_id: orgId, path: org.path}
     });
 
     //process post add

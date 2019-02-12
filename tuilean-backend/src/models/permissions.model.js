@@ -6,7 +6,7 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const theSchema = new Schema({
-    oid: { type: Schema.Types.ObjectId },
+    _id: { type: Schema.Types.ObjectId },
     path: { type: String },
     data: { type: Schema.Types.Mixed }
   });

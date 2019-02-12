@@ -2,10 +2,10 @@
 /**
  * input format:
  *  {
- *    org:{ path(or oid) of org },
+ *    org:{ path(or _id) of org },
  *    follow: {
- *      roles: [ path(or oid) of role ],
- *      permissions: [ path(or oid) of permission]
+ *      roles: [ path(or _id) of role ],
+ *      permissions: [ path(or _id) of permission]
  *    }
  *  }
  */
@@ -27,7 +27,7 @@ module.exports = async function (context, options = {}) {
   const newRoles = [];
   if (followData && followData.roles){
     for ( const r of followData.roles){
-      if (typeof r === 'object' && r.oid && r.path){
+      if (typeof r === 'object' && r._id && r.path){
         newRoles.push(r);
         continue;
       }
@@ -39,7 +39,7 @@ module.exports = async function (context, options = {}) {
         role = r;
       }
       if(role && role._id && role.path){
-        newRoles.push({oid: role._id, path: role.path});
+        newRoles.push({_id: role._id, path: role.path});
       }
     }
   }
@@ -47,7 +47,7 @@ module.exports = async function (context, options = {}) {
   const newPermissions = [];
   if (followData && followData.permissions){
     for ( const p of followData.permissions){
-      if (typeof p === 'object' && p.oid && p.path){
+      if (typeof p === 'object' && p._id && p.path){
         newPermissions.push(p);
         continue;
       }
@@ -59,7 +59,7 @@ module.exports = async function (context, options = {}) {
         permission = p;
       }
       if(permission && permission._id && permission.path){
-        newPermissions.push({oid: permission._id, path: permission.path});
+        newPermissions.push({_id: permission._id, path: permission.path});
       }
     }
   }

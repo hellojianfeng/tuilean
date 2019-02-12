@@ -142,7 +142,7 @@ module.exports = function(context, options) {
           user.channels.joined = user.channels.joined || [];
           let isNewChannel = true;
           user.channels.joined.map ( o => {
-            if ( o.oid.equals(channel._id)){
+            if ( o._id.equals(channel._id)){
               //to-do: how to determind scope is exist?
               o.scopes.push(scope);
               isNewChannel = false;
@@ -150,7 +150,7 @@ module.exports = function(context, options) {
           });
 
           if(isNewChannel){
-            user.channels.joined.push({ oid: channel._id, path: channel.path, scopes_hash: channel.scopes_hash, scopes: [scope]});
+            user.channels.joined.push({ _id: channel._id, path: channel.path, scopes_hash: channel.scopes_hash, scopes: [scope]});
           }
 
           await userService.patch(user._id, {channels: user.channels});
@@ -163,13 +163,13 @@ module.exports = function(context, options) {
         operation.channels.joined = operation.channels.joined || [];
         let isNewChannel = true;
         operation.channels.joined.map ( o => {
-          if ( o.oid.equals(channel._id)){
+          if ( o._id.equals(channel._id)){
             o.scopes.push(scope);
             isNewChannel = false;
           }
         });
         if(isNewChannel){
-          operation.channels.joined.push({oid: channel._id, path: channel.path, scopes_hash: channel.scopes_hash, scopes: [scope]});
+          operation.channels.joined.push({_id: channel._id, path: channel.path, scopes_hash: channel.scopes_hash, scopes: [scope]});
         }
         await operationService.patch(operation._id, {channels: operation.channels});
       }
@@ -240,12 +240,21 @@ module.exports = function(context, options) {
 
     const { user_operations } = await contextParser.parse();
 
-    const operation_channels = user_operations.map ( o => { return o.channels.joined; });
+    let operation_channels = [];
+    user_operations.map ( o => {
+      operation_channels = operation_channels.concat(o.channels.joined);
+    });
     const self_channels = user.channels.joined;
 
-    let { org } = options;
+    let { org, operation } = options;
 
     org = await contextParser.getOrg(org) || await contextParser.getCurrentOrg();
+    if(typeof operation === 'string'){
+      operation = {
+        org, path: operation
+      };
+    }
+    operation = await contextParser.getOperation(operation);
 
     const org_path = typeof org === 'string'? org : typeof org === 'object' && org.path;
 
@@ -257,11 +266,21 @@ module.exports = function(context, options) {
     }
 
     //filter operation channels for org
-    if (org && operation_channels && operation_channels.scopes){
-      operation_channels.scopes.map( o => {
-        if ( o.owner && o.owner.operation && o.owner.operation.org_path === org_path){
-          org_channels.push(o);
+    if (org && operation_channels && Array.isArray(operation_channels)){
+      operation_channels.map( channel => {
+        if (channel.scopes && Array.isArray(channel.scopes)){
+          channel.scopes.map ( scope => {
+            if ( scope.owner && scope.owner.operation && scope.owner.operation.org_path === org_path){
+              org_channels.push(channel);
+            }
+          });
         }
+      });
+    }
+
+    if(operation){
+      operation_channels =operation_channels.filter( o => {
+        return o.path === operation.path && o.org_path === operation.org_path;
       });
     }
 

@@ -79,7 +79,7 @@ module.exports = async function (context, options) {
     });
 
     if ( from_channel && to_channel) {
-      return await notifyHelper.sendNotify({
+      return await notifyHelper.send({
         path: 'apply-join-org', tags: [ 'apply-join-org'],
         from_channel, to_channel, listen: { type: 'notify', path: 'join-org'},
         contents: [

@@ -67,10 +67,10 @@ module.exports = async function (context, options = {}) {
 
       let idList = [];
       permission.operations.map ( o => {
-        idList.push(o.oid);
+        idList.push(o._id);
       });
       if (!idList.includes(operation._id)){
-        permission.operations.push({ oid: operation._id, path: operation.path });
+        permission.operations.push({ _id: operation._id, path: operation.path });
       }
     }
     await permissionService.patch(permission._id, { operations: permission.operations});

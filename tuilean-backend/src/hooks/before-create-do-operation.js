@@ -54,10 +54,10 @@ module.exports = function (options = {}) {
         //if not show doOperation result, should add record operation
         if (!context.result){
           context.data.result = doResult;
-          context.data.operation_id = current_operation._id;         
+          context.data.operation_id = current_operation._id;
           context.data.org_id = current_operation.org_id;
           context.data.org_path = current_operation.org_path;
-          context.data.user = {oid: context.params.user._id, email: context.params.user.email};
+          context.data.user = {_id: context.params.user._id, email: context.params.user.email};
         }
       } else {
         throw new Error('not find index.js for operation of '+ operationPath );

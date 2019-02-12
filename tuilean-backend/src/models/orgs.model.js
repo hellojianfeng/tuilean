@@ -12,13 +12,13 @@ module.exports = function (app) {
   });
 
   const followRoleSchema = new Schema({
-    oid: Schema.Types.ObjectId,
+    _id: Schema.Types.ObjectId,
     path: String,
     data: { type: Schema.Types.Mixed }
   });
 
   const followPermissionSchema = new Schema({
-    oid: Schema.Types.ObjectId,
+    _id: Schema.Types.ObjectId,
     path: String,
     data: { type: Schema.Types.Mixed }
   });
@@ -42,7 +42,7 @@ module.exports = function (app) {
     display_name: { type: String },
     description: { type: String },
     type: {
-      oid: { type: Schema.Types.ObjectId },
+      _id: { type: Schema.Types.ObjectId },
       path: { type: String },
       data: { type: Schema.Types.Mixed }
     }, //object id of org-types

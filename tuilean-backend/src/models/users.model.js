@@ -34,12 +34,12 @@ module.exports = function (app) {
       rejected: [ owner_channel ]
     },
     current_org: {
-      oid: { type: Schema.Types.ObjectId },
+      _id: { type: Schema.Types.ObjectId },
       path: String,
       data: { type: Schema.Types.Mixed }
     },
     follow_org: {
-      oid: { type: Schema.Types.ObjectId },
+      _id: { type: Schema.Types.ObjectId },
       path: String,
       data: { type: Schema.Types.Mixed }
     },

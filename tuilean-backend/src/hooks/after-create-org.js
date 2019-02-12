@@ -69,11 +69,11 @@ module.exports = function (options = {}) {
           org_path: o.path,
           operations: [
             {
-              oid: orgInitialize._id,
+              _id: orgInitialize._id,
               path: orgInitialize.path
             },
             {
-              oid: orgUserManage._id,
+              _id: orgUserManage._id,
               path: orgUserManage.path
             }
           ]
@@ -87,7 +87,7 @@ module.exports = function (options = {}) {
           org_path: o.path,
           operations: [
             {
-              oid: orgHome._id,
+              _id: orgHome._id,
               path: orgHome.path
             }
           ]
@@ -102,7 +102,7 @@ module.exports = function (options = {}) {
           org_path: o.path,
           operations: [
             {
-              oid: orgFollow._id,
+              _id: orgFollow._id,
               path: orgFollow.path
             }
           ]
@@ -123,7 +123,7 @@ module.exports = function (options = {}) {
         name: 'admin',
         permissions: [
           {
-            oid: administrators._id,
+            _id: administrators._id,
             path: administrators.path
           }
         ],
@@ -140,7 +140,7 @@ module.exports = function (options = {}) {
 
       //add admin to user
       roles.push({
-        oid: admin._id,
+        _id: admin._id,
         path: admin.path,
         org_id: o._id,
         org_path: o.path
@@ -149,7 +149,7 @@ module.exports = function (options = {}) {
       //add current user as admin and set current org for user
       await userService.patch(context.params.user._id, {
         roles:roles,
-        current_org: {oid: o._id, path: o.path },
+        current_org: {_id: o._id, path: o.path },
         follow_org: null
       });
     }));

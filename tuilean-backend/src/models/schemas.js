@@ -6,18 +6,18 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
   const orgObj = new Schema({
-    oid: {type: Schema.Types.ObjectId},
+    _id: {type: Schema.Types.ObjectId},
     path: String,
     org_id: {type: Schema.Types.ObjectId},
     org_path: String
   }, { _id: false });
   // const userObj = new Schema({
-  //   oid: {type: Schema.Types.ObjectId},
+  //   _id: {type: Schema.Types.ObjectId},
   //   email: String,
   //   name: String
   // });
   const orgSchema = new Schema({
-    oid: {type: Schema.Types.ObjectId},
+    _id: {type: Schema.Types.ObjectId},
     path: String
   }, { _id: false });
 
@@ -63,7 +63,7 @@ module.exports = function (app) {
   }, { _id: false });
 
   const channelSchema = new Schema({
-    oid: { type: Schema.Types.ObjectId },
+    _id: { type: Schema.Types.ObjectId },
     type: String,
     path: String,
     tags: [ String ],

@@ -32,8 +32,8 @@ module.exports = function (context,options={}, refresh=false) {
       if (orgData._id && orgData.path){
         return orgData;
       }
-      if(orgData.oid && ObjectId.isValid(orgData.oid)){
-        return await orgService.get(orgData.oid);
+      if(orgData._id && ObjectId.isValid(orgData._id)){
+        return await orgService.get(orgData._id);
       }
       if(orgData.path && typeof orgData.path === 'string'){
         orgPath = orgData.path;
@@ -48,7 +48,7 @@ module.exports = function (context,options={}, refresh=false) {
 
     if (typeof orgData === 'string'){
       if(orgData && ObjectId.isValid(orgData)){
-        return await orgService.get(orgData.oid);
+        return await orgService.get(orgData._id);
       }
       orgPath = orgData;
     }
@@ -78,14 +78,14 @@ module.exports = function (context,options={}, refresh=false) {
       }
     }
     if(operation && operation.path === 'org-home'){
-      context.params.user.current_org = {oid: operation.org_id,path:operation.org_path};
+      context.params.user.current_org = {_id: operation.org_id,path:operation.org_path};
       context.params.user.follow_org = null;
       delete context.model_parser.current_org;
       context.model_parser.current_org = await getCurrentOrg();
       await userService.patch(context.params.user._id, { current_org: context.params.user.current_org, follow_org: null});
     }
     if(operation && operation.path === 'org-follow'){
-      context.params.user.follow_org = {oid: operation.org_id,path:operation.org_path};
+      context.params.user.follow_org = {_id: operation.org_id,path:operation.org_path};
       delete context.model_parser.follow_org;
       context.model_parser.follow_org = await getFollowOrg();
       await userService.patch(context.params.user._id, { follow_org: context.params.user.follow_org});
@@ -118,8 +118,8 @@ module.exports = function (context,options={}, refresh=false) {
       if (userData._id && userData.path){
         return userData;
       }
-      if(userData.oid && ObjectId.isValid(userData.oid)){
-        return await userService.get(userData.oid);
+      if(userData._id && ObjectId.isValid(userData._id)){
+        return await userService.get(userData._id);
       }
       if(userData.email && typeof userData.email === 'string'){
         email = userData.email;
@@ -128,7 +128,7 @@ module.exports = function (context,options={}, refresh=false) {
 
     if (typeof userData === 'string'){
       if(userData && ObjectId.isValid(userData)){
-        return await userService.get(userData.oid);
+        return await userService.get(userData._id);
       }
       email = userData;
     }
@@ -149,11 +149,11 @@ module.exports = function (context,options={}, refresh=false) {
         if (u._id && u.path){
           users.push(u);
         }
-        if(u.oid && ObjectId.isValid(u.oid)){
-          user = await userService.get(u.oid);
+        if(u._id && ObjectId.isValid(u._id)){
+          user = await userService.get(u._id);
           users.push(user);
         }
-        if(!u.oid && u.path){
+        if(!u._id && u.path){
           email = u.email;
         }
       }
@@ -190,11 +190,11 @@ module.exports = function (context,options={}, refresh=false) {
     const role = await getEveryoneRole( org );
     if ( role ){
       const idList = role.permissions.map ( p => {
-        return p.oid;
+        return p._id;
       });
       const finds = await permissionService.find({query: {_id: { $in: idList}}});
       return finds ? finds.data : [];
-    } 
+    }
 
     return [];
   };
@@ -204,12 +204,12 @@ module.exports = function (context,options={}, refresh=false) {
     const permissions = await getEveryoneRolePermissions( org ) || [];
 
     const idList = role && role.operations.map ( o => {
-      return o.oid;
+      return o._id;
     }) || [];
 
     permissions.map ( p => {
       p.operations.map ( o => {
-        idList.push ( o.oid);
+        idList.push ( o._id);
       });
     });
 
@@ -231,7 +231,7 @@ module.exports = function (context,options={}, refresh=false) {
   const getEveryonePermissionOperations = async ( org = null) => {
     const permission = await getEveryonePermission(org);
     const idList = permission && permission.operations.map ( p => {
-      return p.oid;
+      return p._id;
     }) || [];
     const finds = await operationService.find({query: {_id: { $in: idList}}});
     return finds ? finds.data : [];
@@ -262,8 +262,8 @@ module.exports = function (context,options={}, refresh=false) {
       if (modelData._id && modelData.path){
         return modelData;
       }
-      if(modelData.oid && ObjectId.isValid(modelData.oid)){
-        return await service.get(modelData.oid);
+      if(modelData._id && ObjectId.isValid(modelData._id)){
+        return await service.get(modelData._id);
       }
       if(modelData.path && typeof modelData.path === 'string'){
         path = modelData.path;
@@ -275,7 +275,7 @@ module.exports = function (context,options={}, refresh=false) {
 
     if (typeof modelData === 'string'){
       if(modelData && ObjectId.isValid(modelData)){
-        return await service.get(modelData.oid);
+        return await service.get(modelData._id);
       }
       path = modelData;
     }
@@ -301,11 +301,11 @@ module.exports = function (context,options={}, refresh=false) {
         if (e._id && e.path){
           list.push(e);
         }
-        if(e.oid && ObjectId.isValid(e.oid)){
-          model = await service.get(e.oid);
+        if(e._id && ObjectId.isValid(e._id)){
+          model = await service.get(e._id);
           list.push(model);
         }
-        if(!e.oid && e.path){
+        if(!e._id && e.path){
           path = e.path;
         }
       }
@@ -352,7 +352,7 @@ module.exports = function (context,options={}, refresh=false) {
     if (user && user.roles){
       const idList = user.roles.map ( r => {
         if (r.org_path === org.path)
-        {return r.oid;}
+        {return r._id;}
       });
       if (idList.length > 0){
         const finds = await roleService.find ( {query:{_id: { $in: idList}}});
@@ -369,12 +369,12 @@ module.exports = function (context,options={}, refresh=false) {
     const permissions = user && user.permissions || [];
     const idList = permissions.map ( p => {
       if (p.org_path === org.path)
-      {return p.oid;}
+      {return p._id;}
     });
     const roles = await getOrgUserRoles( options );
     roles.map ( r => {
       r.permissions.map ( p => {
-        idList.push(p.oid);
+        idList.push(p._id);
       });
     });
     const finds = await permissionService.find({query:{_id:{$in:idList}}});
@@ -386,18 +386,18 @@ module.exports = function (context,options={}, refresh=false) {
     const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
     const idList = user.operations.map ( o => {
       if(o.org_path === org.path)
-      {return o.oid;}
+      {return o._id;}
     });
     const roles = await getOrgUserRoles( options );
     roles.map ( r => {
       r.operations.map ( o => {
-        idList.push(o.oid);
+        idList.push(o._id);
       });
     });
     const permissions = await getOrgUserPermissions( options ={} );
     permissions.map ( p => {
       p.operations.map ( o => {
-        idList.push(o.oid);
+        idList.push(o._id);
       });
     });
     const finds = await operationService.find({query:{_id:{$in:idList}}});
@@ -414,17 +414,17 @@ module.exports = function (context,options={}, refresh=false) {
       for( const f of org.follows){
         const follow_org = await getOrg(f.org_path);
         const roleListData = f.roles.map( o => {
-          return { oid: o.oid };
+          return { _id: o._id };
         });
         const roles = await getRoles(roleListData);
         const permissionListData = f.permissions.map( o => {
-          return { oid: o.oid };
+          return { _id: o._id };
         });
         const permissions = await getPermissions(permissionListData);
         const operationIds = [];
         permissions.map ( p=> {
           operationIds.push(p.operations.map(o=>{
-            return o.oid;
+            return o._id;
           }));
         });
         const finds = await operationService.find({query:{_id:{$in:operationIds}}});
@@ -432,7 +432,7 @@ module.exports = function (context,options={}, refresh=false) {
         follows.push({ org: follow_org, roles, permissions, operations});
       }
     }
-    
+
     return follows;
   };
 
@@ -462,7 +462,7 @@ module.exports = function (context,options={}, refresh=false) {
 
     if (permissions.length > 0){
       const idList = permissions.map ( p => {
-        return p.oid;
+        return p._id;
       });
       const finds = await permissionService.find({query:{_id:{$in: idList}}});
       permissions = finds.data;
@@ -475,7 +475,7 @@ module.exports = function (context,options={}, refresh=false) {
     let opIds = [];
     for (const fp of followPermissions) {
       fp.operations.map( o => {
-        return opIds.push(o.oid);
+        return opIds.push(o._id);
       });
     }
     const finds = await operationService.find({query:{
@@ -572,8 +572,8 @@ module.exports = function (context,options={}, refresh=false) {
       }
     }
     if (typeof channelData === 'object'){
-      if(channelData && channelData.oid && ObjectId.isValid(channelData.oid)){
-        return await channelService.get(channelData.oid);
+      if(channelData && channelData._id && ObjectId.isValid(channelData._id)){
+        return await channelService.get(channelData._id);
       }
       if(channelData && channelData._id && channelData.event_id){
         return channelData;
