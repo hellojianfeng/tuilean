@@ -148,7 +148,43 @@
         ]
       },
       "department":{},
-      "department.company":{}
+      "department.company":{},
+      "school.class":{
+        "roles": [
+          {
+            "path":"teacher"
+          },
+          {
+            "path":"student"
+          }
+        ],
+        "operations":[
+          {
+            "path":"class-assignment-admin",
+            "app":"school",
+            "roles":["teacher"]
+          },
+          {
+            "path":"class-assignment-do",
+            "app":"school",
+            "roles":["student"]
+          }
+        ],
+        "permissions":[
+          {
+            "path":"class-assignment-monitor"
+          }
+        ]
+      },
+      "school.class.primary":{
+        "roles": [
+          {
+            "path":"parent",
+            "operations":["class-assignment-do"],
+            "permissions":["class-assignment-monitor"]
+          }
+        ]
+      }
     }
   }
 }
