@@ -41,15 +41,15 @@ module.exports = function (options = {}) {
       context.params.operation = current_operation;
       const operationPath = current_operation.path;
       const operationApp = current_operation.app || 'default';
-      if (fs.existsSync('src/operations/'+ operationApp + '/' +operationPath + '/data.json'))
+      if (fs.existsSync('src/operations/'+ operationApp + '/' + operationPath + '/data.json'))
       {
-        const jsonData = require('../operations/default/'+ current_operation.path+'/data.json');
+        const jsonData = require('../operations/' + operationApp + '/' + operationPath +'/data.json');
         context.params.configuration = context.params.configuration || {};
         context.params.configuration.operation = jsonData;
       }
       if (fs.existsSync('src/operations/' + operationApp + '/' + operationPath + '/index.js'))
       {
-        const doOperation = require('../operations/default/' + operationPath + '/index.js');
+        const doOperation = require('../operations/'  + operationApp + '/' + operationPath + '/index.js');
         const doResult = await doOperation(context,options);
         //if not show doOperation result, should add record operation
         if (!context.result){
