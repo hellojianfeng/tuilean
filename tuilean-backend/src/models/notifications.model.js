@@ -5,7 +5,9 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
+
   const contentSchema = new Schema({
+    type: String,
     name: { type: String },
     path: { type: String }, 
     tags: { type: String },
@@ -14,7 +16,6 @@ module.exports = function (app) {
     header: { type: String },
     body: { type: Schema.Types.Mixed },
     footer: { type: String },
-    data: { type: Schema.Types.Mixed }
   });
 
   const { channel_obj } = require('./schemas')(app);

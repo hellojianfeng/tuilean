@@ -2,6 +2,7 @@
 
 module.exports = function(context, options) {
   const channelHelper = require('./channel-helper')(context,options);
+  const notificationService = context.app.service('notifications');
   //const contextParser = require('../utils/js/context-parser')(context, options);
 
 
@@ -41,6 +42,27 @@ module.exports = function(context, options) {
     }
   };
 
-  return {send };
+  const receive = async notifyData => {
+    let { from_channel, to_channel, from_scopes, to_scopes, listen } = notifyData;
+
+    from_channel = await channelHelper.getChannel(from_channel);
+    to_channel = await channelHelper.getChannel(to_channel);
+    from_scopes = await channelHelper.formatScope(from_scopes);
+    to_scopes = await channelHelper.formatScope(to_scopes);
+
+    const listenPath = typeof listen === 'string' ? listen : listen && listen.path;
+
+    let sent_notifications, received_notifications;
+
+    if (from_channel){
+      const query = {
+        from_channel,path: listenPath
+      };
+      const finds = await notificationService(query);
+      sent_notifications = finds.data;
+    }
+  };
+
+  return {send, receive };
 };
 
