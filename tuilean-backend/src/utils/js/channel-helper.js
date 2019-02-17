@@ -177,17 +177,19 @@ module.exports = function(context, options) {
   };
 
   const getChannel = async ( options ) => {
-    const channelData = options.channel || options;
+    const channelData = options && options.channel || options;
     if (channelData && channelData._id && channelData.path && channelData.scopes && channelData.scopes_hash){
       return channelData;
     }
-    const {scopes, path} = channelData;
-    if(scopes && path && !path.startsWith('$')){
-      const scopes_hash = objectHash(scopes);
-      let query = { scopes_hash, path};
-      const finds = await channelService.find({query});
-      if(finds.total === 1){
-        return finds.data[0];
+    if (channelData){
+      const {scopes, path} = channelData;
+      if(scopes && path && !path.startsWith('$')){
+        const scopes_hash = objectHash(scopes);
+        let query = { scopes_hash, path};
+        const finds = await channelService.find({query});
+        if(finds.total === 1){
+          return finds.data[0];
+        }
       }
     }
   };
@@ -299,32 +301,38 @@ module.exports = function(context, options) {
   };
 
   const formatScope = async options => {
-    let { scopes, org } = options;
 
-    org = org || await contextParser.getCurrentOrg();
+    if (options){
+      let scopes = options.scopes || options;
 
-    scopes = scopes || [];
+      let org = options.org && await contextParser.getOrg(options.org) || await contextParser.getCurrentOrg();
 
-    for ( const scope of scopes) {
-      if (scope.users && Array.isArray(scope.users)){
-        scope.users.map ( u => {
-          if ( u === '$email'){
-            u = user.email;
-          }
-        });
+      let orgPath = org && org.path;
+      scopes = scopes || [];
+
+      for ( let scope of scopes) {
+        if (scope.users && Array.isArray(scope.users)){
+          scope.users = scope.users.map ( u => {
+            if ( u === '$email'){
+              u = user.email;
+            }
+            return u;
+          });
+        }
+
+        if (scope.owner && scope.owner.operation && (!scope.owner.operation.org_path || scope.owner.operation.org_path === '$current-org')){
+          const path = scope.owner.operation.path || scope.owner.operation;
+
+          scope.owner.operation = {path, org_path: orgPath};
+        }
+
+        if (scope.owner && scope.owner.user && scope.owner.user === '$current-user'){
+          scope.owner.user = user.email;
+        }
       }
 
-      if (scope.owner && scope.owner.operation && scope.owner.operation.org_path === '$current-org'){
-        scope.owner.operation.org_path = org.path;
-      }
-
-      if (scope.owner && scope.owner.user && scope.owner.user === '$current-user'){
-        scope.owner.user = user.email;
-      }
+      return scopes;
     }
-
-    return scopes;
-
   };
 
   const checkAllowListen = async options => {

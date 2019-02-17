@@ -22,8 +22,9 @@ module.exports = function (options = {}) {
       context.result = Object.assign(context.result,await buildResult.notify(result));
     }
 
-    if(['receive','pull'].includes(action)){
-      const result = await notifyHelper.receive(notifyData);
+    if(['find'].includes(action)){
+      const result = await notifyHelper.find(notifyData);
+      context.result = context.result || {};
       context.result = Object.assign(context.result,await buildResult.notify(result));
     }
 

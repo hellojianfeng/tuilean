@@ -1,5 +1,5 @@
 
-
+const objectHash = require('object-hash');
 module.exports = function(context, options) {
   const channelHelper = require('./channel-helper')(context,options);
   const notificationService = context.app.service('notifications');
@@ -42,7 +42,8 @@ module.exports = function(context, options) {
     }
   };
 
-  const receive = async notifyData => {
+  const find = async notifyData => {
+
     let { from_channel, to_channel, from_scopes, to_scopes, listen } = notifyData;
 
     from_channel = await channelHelper.getChannel(from_channel);
@@ -52,17 +53,53 @@ module.exports = function(context, options) {
 
     const listenPath = typeof listen === 'string' ? listen : listen && listen.path;
 
-    let sent_notifications, received_notifications;
+    let sent = notifyData.send || { $limit: 20, $skip : 0, $sort: { createdAt: -1 }};
+    let receive = notifyData.receive || { $limit: 20, $skip : 0, $sort: { createdAt: -1 }};
+    let sent_notifications, receive_notifications;
 
-    if (from_channel){
-      const query = {
-        from_channel,path: listenPath
-      };
-      const finds = await notificationService(query);
-      sent_notifications = finds.data;
+    if ( listenPath){
+      if (sent){
+        if (from_channel){
+          sent = Object.assign(sent, {
+            from_channel,
+            path: listenPath
+          });
+          const finds = await notificationService(sent);
+          sent_notifications = finds.data;
+        } else if (from_scopes){
+          const scopes_hash = objectHash(from_scopes);
+          sent = Object.assign(sent, {
+            scopes_hash,
+            path: listenPath
+          });
+          const finds = await notificationService(sent);
+          sent_notifications = finds.data;
+        }
+      }
+
+      if(receive){
+        if (to_channel){
+          receive = Object.assign(receive, {
+            to_channel,
+            path: listenPath
+          });
+          const finds = await notificationService.find({query:receive});
+          receive_notifications = finds.data;
+        } else if(to_scopes){
+          const scopes_hash = objectHash(to_scopes);
+          receive = Object.assign(receive, {
+            'to_channel.scopes_hash': scopes_hash,
+            path: listenPath
+          });
+          const finds = await notificationService.find({query:receive});
+          receive_notifications = finds.data;
+        }
+      }
     }
+
+    return {sent_notifications, receive_notifications };
   };
 
-  return {send, receive };
+  return {send, find };
 };
 
