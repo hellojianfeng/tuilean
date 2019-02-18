@@ -22,7 +22,8 @@ module.exports = function (app) {
 
   const notifications = new Schema({
     name: String,
-    path: { type: String, required: true },
+    path: { type: String },
+    listen: String,
     tags: { type: String },
     description: { type: String },
     from_channel: channel_obj,

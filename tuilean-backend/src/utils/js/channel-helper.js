@@ -191,6 +191,21 @@ module.exports = function(context, options) {
           return finds.data[0];
         }
       }
+      if(scopes){
+        const scopes_hash = objectHash(scopes);
+        let query = { scopes_hash };
+        const finds = await channelService.find({query});
+        if(finds.total === 1){
+          return finds.data[0];
+        }
+      }
+      if(path && !path.startsWith('$')){
+        let query = { path};
+        const finds = await channelService.find({query});
+        if(finds.total === 1){
+          return finds.data[0];
+        }
+      }
     }
   };
 
@@ -339,6 +354,12 @@ module.exports = function(context, options) {
     let {from_channel, to_channel, listen} = options;
     from_channel = await getChannel(from_channel);
     to_channel = await getChannel(to_channel);
+    if (typeof listen === 'string'){
+      listen = {
+        type: 'notify',
+        path: listen
+      };
+    }
 
     if ( from_channel && to_channel && listen ){
       let listens = to_channel && to_channel.allow && to_channel.allow.listens || [];

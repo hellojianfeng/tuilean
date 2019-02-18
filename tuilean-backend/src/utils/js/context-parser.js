@@ -271,6 +271,9 @@ module.exports = function (context,options={}, refresh=false) {
       if (modelData.org){
         org = await getOrg(modelData.org);
       }
+      if (modelData.org_path){
+        org = await getOrg(modelData.org_path);
+      }
     }
 
     if (typeof modelData === 'string'){
