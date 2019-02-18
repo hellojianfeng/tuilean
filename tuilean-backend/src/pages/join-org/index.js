@@ -56,7 +56,7 @@ module.exports = async function (context, options) {
     });
 
     const from_channel = await channelHelper.findOrCreateChannel({
-      path:'join-org-'+ user.email,
+      path:'page#join-org#user#'+ user.email,
       scopes: [
         {
           owner: {
