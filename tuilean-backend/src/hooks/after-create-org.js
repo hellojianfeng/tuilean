@@ -10,6 +10,7 @@ module.exports = function (options = {}) {
     const permissionService = context.app.service('permissions');
     const userService = context.app.service('users');
     const operationService = context.app.service('operations');
+    const channelHelper = require('../utils/js/channel-helper')(context,options);
 
     let orgs = [];
 
@@ -41,26 +42,43 @@ module.exports = function (options = {}) {
         org_path: o.path
       });
       //add default org-user-admin operation
+
       const orgUserManage = await operationService.create({
         name: 'org-user-admin',
         org_id: o._id,
-        org_path: o.path,
-        create_channels: [
-          {
-            scope: '$current_operation',
-            allow:{
-              notify: {
-                pages: [
+        org_path: o.path
+      });
+      await channelHelper.createChannel(
+        {
+          path: '#org#'+ o.path + '#operation#' + 'org-user-admin',
+          scopes: [
+            {
+              owner: {
+                operation: {
+                  path: 'org-user-admin',
+                  org_path: o.path
+                }
+              }
+            }
+          ],
+          allow:{
+            listens:[
+              {
+                type:'notify',
+                path:'join-org',
+                scopes:[
                   {
-                    page: 'join-org',
-                    users: ['$self']
+                    owner: {
+                      user: ['$any']
+                    },
+                    pages: ['join-org']
                   }
                 ]
               }
-            }
+            ]
           }
-        ]
-      });
+        }
+      );
       //administrator permission
       const administrators = await permissionService.create(
         {

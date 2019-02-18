@@ -10,7 +10,6 @@ module.exports = function (app) {
     type: String,
     path: String,
     scopes: [ channel_scope ],
-    scopes_hash: String,
     description: String,
     data: { type: Schema.Types.Mixed }
   }, {_id: false });

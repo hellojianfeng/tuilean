@@ -3,7 +3,7 @@
 
 // eslint-disable-next-line no-unused-vars
 const objectHash = require('object-hash');
-module.exports = function (options = {}) {
+module.exports = function () {
   return async context => {
     // const service = context.service;
     // const id = context.result._id;

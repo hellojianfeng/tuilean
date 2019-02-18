@@ -17,8 +17,14 @@ module.exports = function (options = {}) {
       context.result = buildResult.notify({org_channels,self_channels,operation_channels});
     }
 
-    if(action === 'send'){
+    if(action === 'send' || action === 'push'){
       const result = await notifyHelper.send(notifyData);
+      context.result = Object.assign(context.result,await buildResult.notify(result));
+    }
+
+    if(['find'].includes(action)){
+      const result = await notifyHelper.find(notifyData);
+      context.result = context.result || {};
       context.result = Object.assign(context.result,await buildResult.notify(result));
     }
 

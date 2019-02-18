@@ -56,7 +56,7 @@ module.exports = async function (context, options) {
     });
 
     const from_channel = await channelHelper.findOrCreateChannel({
-      path:'join-org-'+ user.email,
+      path:'page#join-org#user#'+ user.email,
       scopes: [
         {
           owner: {
@@ -80,8 +80,10 @@ module.exports = async function (context, options) {
 
     if ( from_channel && to_channel) {
       return await notifyHelper.send({
-        path: 'apply-join-org', tags: [ 'apply-join-org'],
-        from_channel, to_channel, listen: { type: 'notify', path: 'join-org'},
+        path: 'apply-join-org',
+        tags: [ 'apply-join-org'],
+        from_channel, to_channel, 
+        listen: 'join-org',
         contents: [
           { name: 'message', body:'apply-join-org, please process this request!'},
           { org }
