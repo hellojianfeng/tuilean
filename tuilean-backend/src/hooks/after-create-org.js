@@ -65,13 +65,36 @@ module.exports = function (options = {}) {
             listens:[
               {
                 type:'notify',
-                path:'join-org',
+                listen:'join-org',
                 scopes:[
                   {
                     owner: {
                       user: ['$any']
                     },
                     pages: ['join-org']
+                  }
+                ],
+                data:[
+                  {
+                    type: 'notification',
+                    path: {
+                      value: 'apply-join-org',
+                      description: 'must provide path as this value',
+                      required: true
+                    },
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    contents: [
+                      {
+                        name: 'org',
+                        description: 'applying org with _id and path',
+                        body: {
+                          type: 'object',
+                          description: 'org object with _id and path',
+                          required: true
+                        }
+                      }
+                    ]
                   }
                 ]
               }

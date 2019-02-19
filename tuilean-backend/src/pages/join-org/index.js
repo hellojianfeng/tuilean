@@ -24,12 +24,13 @@ module.exports = async function (context, options) {
     return context.result = await buildResult.page({ user_orgs });
   }
 
-  if (action === 'search'){
-    const { user_orgs } = await contextParser.parse();
+  if (action === 'find-orgs'){
+    let { user_orgs } = await contextParser.parse();
+    user_orgs = Object.values(user_orgs);
     const listOfPath = user_orgs.map ( o => {
       return o.path;
     });
-    const finds = await orgService.find(pageData);
+    const finds = await orgService.find({query:pageData});
     if (finds.total > 0){
       return context.result = await buildResult.page( finds.data.filter( o => {
         return !listOfPath.includes(o.path);

@@ -11,8 +11,8 @@ module.exports = function (app) {
     name: { type: String },
     path: { type: String }, 
     tags: { type: String },
-    description: { type: String },
     title: String,
+    description: { type: String },
     header: { type: String },
     body: { type: Schema.Types.Mixed },
     footer: { type: String },
@@ -21,10 +21,12 @@ module.exports = function (app) {
   const { channel_obj } = require('./schemas')(app);
 
   const notifications = new Schema({
-    name: String,
-    path: { type: String },
     listen: String,
+    type: { type: String },
+    name: String,
+    path: String,
     tags: { type: String },
+    title: { type: String },
     description: { type: String },
     from_channel: channel_obj,
     to_channel: channel_obj,

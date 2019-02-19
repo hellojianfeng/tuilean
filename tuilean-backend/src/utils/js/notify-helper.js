@@ -38,15 +38,17 @@ module.exports = function(context, options) {
 
   const find = async notifyData => {
 
-    let { from_channel, to_channel, from_scopes, to_scopes, listen } = notifyData;
+    let { from, to, from_channel, to_channel, from_scopes, to_scopes, listen } = notifyData;
 
     from_scopes = await channelHelper.formatScope(from_scopes);
     to_scopes = await channelHelper.formatScope(to_scopes);
-    from_channel = await channelHelper.getChannel(from_channel) || await channelHelper.getChannel({scopes: from_scopes});
-    to_channel = await channelHelper.getChannel(to_channel) || await channelHelper.getChannel({scopes: to_scopes});
+    from_channel = await channelHelper.getChannel(from_channel) || await channelHelper.getChannel(from) || await channelHelper.getChannel({scopes: from_scopes});
+    to_channel = await channelHelper.getChannel(to_channel) || await channelHelper.getChannel(to) || await channelHelper.getChannel({scopes: to_scopes});
 
     let sent = notifyData.send || { $limit: 20, $skip : 0, $sort: { createdAt: -1 }};
+    sent.$sort = sent.$sort || { createdAt: -1 };
     let receive = notifyData.receive || { $limit: 20, $skip : 0, $sort: { createdAt: -1 }};
+    receive.$sort = receive.$sort || { createdAt: -1 };
     let sent_notifications, receive_notifications;
 
     if ( listen){
