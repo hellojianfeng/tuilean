@@ -24,12 +24,13 @@ module.exports = async function (context, options) {
     return context.result = await buildResult.page({ user_orgs });
   }
 
-  if (action === 'search'){
-    const { user_orgs } = await contextParser.parse();
+  if (action === 'find-orgs'){
+    let { user_orgs } = await contextParser.parse();
+    user_orgs = Object.values(user_orgs);
     const listOfPath = user_orgs.map ( o => {
       return o.path;
     });
-    const finds = await orgService.find(pageData);
+    const finds = await orgService.find({query:pageData});
     if (finds.total > 0){
       return context.result = await buildResult.page( finds.data.filter( o => {
         return !listOfPath.includes(o.path);
@@ -41,54 +42,84 @@ module.exports = async function (context, options) {
 
   if (action === 'apply-join'){
 
-    const { org } = pageData;
+    let { org } = pageData;
 
-    const to_channel = await channelHelper.getChannel({
-      path: 'org-user-admin-channel',
-      scopes:
-        [
-          {
-            owner: {
-              operation: { path: 'org-user-admin', org_path: org}
+    if (org){
+      org = await contextParser.getOrg(org);
+      const to_channel_path = 'org#'+org.path+'#operation#org-user-admin-channel';
+      const to_channel = await channelHelper.getChannel({
+        path: to_channel_path,
+        scopes:
+          [
+            {
+              owner: {
+                operation: { path: 'org-user-admin', org_path: org.path}
+              }
             }
-          }
-        ]
-    });
-
-    const from_channel = await channelHelper.findOrCreateChannel({
-      path:'page#join-org#user#'+ user.email,
-      scopes: [
-        {
-          owner: {
-            user: user.email
-          },
-          pages: ['join-org'],
-        }
-      ],
-      allow: {
-        listens: [
-          {
-            type: 'notify',
-            path: 'join-org',
-            owner: {
-              operation: { org, operation: 'org-user-admin'}
-            }
-          }
-        ]
-      }
-    });
-
-    if ( from_channel && to_channel) {
-      return await notifyHelper.send({
-        path: 'apply-join-org',
-        tags: [ 'apply-join-org'],
-        from_channel, to_channel, 
-        listen: 'join-org',
-        contents: [
-          { name: 'message', body:'apply-join-org, please process this request!'},
-          { org }
-        ]
+          ]
       });
+  
+      const from_channel = await channelHelper.findOrCreateChannel({
+        path:'page#join-org#user#'+ user.email,
+        scopes: [
+          {
+            owner: {
+              user: user.email
+            },
+            pages: ['join-org'],
+          }
+        ],
+        allow: {
+          listens: [
+            {
+              type: 'notify',
+              path: 'join-org',
+              scopes:[
+                {
+                  owner: {
+                    operation: { org, operation: 'org-user-admin'}
+                  }
+                }
+              ],
+              data:[
+                {
+                  type: 'notification',
+                  path: {
+                    value: 'admin-join-org',
+                    description: 'must provide path as this value',
+                    required: true
+                  },
+                  title: { type: 'string' },
+                  description: { type: 'string' },
+                  contents:[
+                    {
+                      name:'process-join-org-result',
+                      type: 'data.join-org-result',
+                      value: {type: 'enum', values: ['approved','rejected','processing']},
+                      required: true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      });
+  
+      if ( from_channel && to_channel) {
+        return await notifyHelper.send({
+          path: 'apply-join-org',
+          tags: [ 'apply-join-org'],
+          from_channel, to_channel, 
+          listen: 'join-org',
+          contents: [
+            { name: 'message', type: 'string', value:'apply-join-org, please process this request!'},
+            { name: 'org', type: 'data.org',  value: {_id: org._id, path: org.path}}
+          ]
+        });
+      }
+    } else {
+      return { code: 301, message:'please provide org!'};
     }
   }
 

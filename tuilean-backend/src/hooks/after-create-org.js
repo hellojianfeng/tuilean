@@ -73,6 +73,30 @@ module.exports = function (options = {}) {
                     },
                     pages: ['join-org']
                   }
+                ],
+                data:[
+                  {
+                    type: 'notification',
+                    path: {
+                      value: 'apply-join-org',
+                      description: 'must provide path as this value',
+                      required: true
+                    },
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    contents: [
+                      {
+                        name: 'org',
+                        type: 'data.org',
+                        description: 'applying org data with _id and path',
+                        value: {
+                          type: 'object',
+                          description: 'org object with _id and path',
+                          required: true
+                        }
+                      }
+                    ]
+                  }
                 ]
               }
             ]

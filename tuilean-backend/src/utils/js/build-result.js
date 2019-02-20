@@ -15,6 +15,7 @@ module.exports = function (context) {
     return  {
       page: pageName,
       action: action,
+      data: context.data.data,
       user: {_id: user._id, email: user.email},
       result
     };
