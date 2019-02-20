@@ -65,7 +65,7 @@ module.exports = function (options = {}) {
             listens:[
               {
                 type:'notify',
-                listen:'join-org',
+                path:'join-org',
                 scopes:[
                   {
                     owner: {
@@ -87,8 +87,9 @@ module.exports = function (options = {}) {
                     contents: [
                       {
                         name: 'org',
-                        description: 'applying org with _id and path',
-                        body: {
+                        type: 'data.org',
+                        description: 'applying org data with _id and path',
+                        value: {
                           type: 'object',
                           description: 'org object with _id and path',
                           required: true

@@ -14,7 +14,7 @@ module.exports = function (app) {
     title: String,
     description: { type: String },
     header: { type: String },
-    body: { type: Schema.Types.Mixed },
+    value: { type: Schema.Types.Mixed },
     footer: { type: String },
   });
 
