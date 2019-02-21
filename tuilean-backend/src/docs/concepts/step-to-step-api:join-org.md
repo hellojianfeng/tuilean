@@ -7,6 +7,8 @@ This document describe steps to use api to complete join org task, these steps i
 4. initialize org. access http://xxx/do-operation to initialize org, org will equiped with configured roles and so on.
 5. create second user. say user2, this user will join school class created before
 6. join org. access http://xxx/pages with page name of join-org to join org
+7. check sent notification. access http://xxx/notify to get sent notification by applying user
+8. check received notification. access http://xxx/notify to get received notification to org-user-admin operation
 
 ## API For Join Org
 
@@ -452,5 +454,302 @@ please note that:
     "createdAt": "2019-02-20T05:48:55.752Z",
     "updatedAt": "2019-02-20T05:48:55.752Z",
     "__v": 0
+}
+```
+
+## API For Checking Sent Notifications
+
+### API Detail
+before access api, please add user token into header of Authorization
+
+**URL** : http://host/notify
+
+**Method**: POST
+
+**POST Data**:
+
+please note that:
+
+1. action must be 'find'
+2. listen property and channel property under data are required. here means user2@example.com in page of join-org is find sent notifications.
+3. can provide scopes, path or both for find a channel which is sent notifications
+
+```JSON
+{
+    "action":"find",
+    "data":{
+        "sent":{
+            "listen":"join-org",
+            "channel":{
+                "scopes":[
+                    {
+                        "owner":{
+                        "user":"user2@example.com"
+                    },
+                    "pages":["join-org"]
+                    }
+                ]
+            }
+        }
+    }
+}
+```
+or
+```JSON
+{
+    "action":"find",
+    "data":{
+        "sent":{
+            "listen":"join-org",
+            "channel":{
+                "path":"page#join-org#user#user2@example.com"
+            }
+        }
+    }
+}
+```
+
+**Response**:
+
+please note that: 
+1. emit id is the event id for listen notification created be join-org, org-user-admin operation user should use it to listen notification to it's operation
+2. this action will first create a channel for user2 who apply join org, then send notification from user2's channel to or-user-admin channel
+
+```JSON
+{
+    "url": "/notify",
+    "method": "POST",
+    "action": "find",
+    "user": {
+        "_id": "5c6deba80e758dd951c0aed6",
+        "email": "user2@example.com"
+    },
+    "data": {
+        "sent": {
+            "listen": "join-org",
+            "channel": {
+                "path": "page#join-org#user#user2@example.com"
+            }
+        }
+    },
+    "result": {
+        "sent_notifications": [
+            {
+                "_id": "5c6debcf0e758dd951c0aed8",
+                "path": "apply-join-org",
+                "tags": "apply-join-org",
+                "from_channel": {
+                    "tags": [],
+                    "_id": "5c6debcf0e758dd951c0aed7",
+                    "scopes": [
+                        {
+                            "users": [],
+                            "pages": [
+                                "join-org"
+                            ],
+                            "owner": {
+                                "user": "user2@example.com"
+                            },
+                            "orgs": [],
+                            "roles": [],
+                            "permissions": [],
+                            "operations": []
+                        }
+                    ],
+                    "path": "page#join-org#user#user2@example.com",
+                    "scopes_hash": "9652b21512c056c82c5f7ae67611fcabe7d18e34"
+                },
+                "to_channel": {
+                    "tags": [],
+                    "_id": "5c6deb8a0e758dd951c0aec7",
+                    "scopes": [
+                        {
+                            "users": [],
+                            "pages": [],
+                            "owner": {
+                                "operation": {
+                                    "path": "org-user-admin",
+                                    "org_path": "class1"
+                                }
+                            },
+                            "orgs": [],
+                            "roles": [],
+                            "permissions": [],
+                            "operations": []
+                        }
+                    ],
+                    "path": "org#class1#operation#org-user-admin",
+                    "scopes_hash": "42f5a915280bc319a7c5fd21ab45a614ebb52fc2"
+                },
+                "listen": "join-org",
+                "contents": [
+                    {
+                        "_id": "5c6debcf0e758dd951c0aeda",
+                        "name": "message",
+                        "type": "string",
+                        "value": "apply-join-org, please process this request!"
+                    },
+                    {
+                        "_id": "5c6debcf0e758dd951c0aed9",
+                        "name": "org",
+                        "type": "data.org",
+                        "value": {
+                            "_id": "5c6deb8a0e758dd951c0aec2",
+                            "path": "class1"
+                        }
+                    }
+                ],
+                "sender": {
+                    "_id": "5c6deba80e758dd951c0aed6",
+                    "email": "user2@example.com"
+                },
+                "createdAt": "2019-02-21T00:07:43.178Z",
+                "updatedAt": "2019-02-21T00:07:43.178Z",
+                "__v": 0
+            }
+        ]
+    }
+}
+```
+
+## API For Checking Received Notifications
+Received notification can be checked at two point for org-user-admin operation (here as example)
+1. point 1: when open org notification UI in client, it should call this API to find received notifications
+2. when some user is applying org, it will emit an event, in org notification client, it should listen notification event id and get latest notification. 
+3. commonly should listen 'type'+listen+channel_id event id, for org-user-admin operation channel, listen event id should like 'notify-join-org-5c6deb8a0e758dd951c0aec7'
+
+### API Detail
+before access api, please add user token into header of Authorization
+
+**URL** : http://host/notify
+
+**Method**: POST
+
+**POST Data**:
+
+please note that:
+
+1. action must be 'find'
+2. listen property and channel property under data are required. here means operation org-user-admin is getting received message.
+3. can provide scopes, path or both for find a channel which is receiving notifications
+4. can provide $limit or $skip for receiving notifications
+
+```JSON
+{
+    "action":"find",
+    "data":{
+        "received":{
+            "$limit":10,
+            "$skip": 0,
+            "listen":"join-org",
+            "channel":{
+                "path":"org#class1#operation#org-user-admin"
+            }
+        }
+    }
+}
+```
+
+**Response**:
+
+please note that: 
+1. emit id is the event id for listen notification created be join-org, org-user-admin operation user should use it to listen notification to it's operation, emit id commonly is 'notify-listen-channel_id'
+
+```JSON
+{
+    "url": "/notify",
+    "method": "POST",
+    "action": "find",
+    "user": {
+        "_id": "5c6deb6a0e758dd951c0aec0",
+        "email": "user1@example.com"
+    },
+    "data": {
+        "received": {
+            "$limit": 10,
+            "$skip": 0,
+            "listen": "join-org",
+            "channel": {
+                "path": "org#class1#operation#org-user-admin"
+            }
+        }
+    },
+    "result": {
+        "received_notifications": [
+            {
+                "_id": "5c6debcf0e758dd951c0aed8",
+                "path": "apply-join-org",
+                "tags": "apply-join-org",
+                "from_channel": {
+                    "tags": [],
+                    "_id": "5c6debcf0e758dd951c0aed7",
+                    "scopes": [
+                        {
+                            "users": [],
+                            "pages": [
+                                "join-org"
+                            ],
+                            "owner": {
+                                "user": "user2@example.com"
+                            },
+                            "orgs": [],
+                            "roles": [],
+                            "permissions": [],
+                            "operations": []
+                        }
+                    ],
+                    "path": "page#join-org#user#user2@example.com",
+                    "scopes_hash": "9652b21512c056c82c5f7ae67611fcabe7d18e34"
+                },
+                "to_channel": {
+                    "tags": [],
+                    "_id": "5c6deb8a0e758dd951c0aec7",
+                    "scopes": [
+                        {
+                            "users": [],
+                            "pages": [],
+                            "owner": {
+                                "operation": {
+                                    "path": "org-user-admin",
+                                    "org_path": "class1"
+                                }
+                            },
+                            "orgs": [],
+                            "roles": [],
+                            "permissions": [],
+                            "operations": []
+                        }
+                    ],
+                    "path": "org#class1#operation#org-user-admin",
+                    "scopes_hash": "42f5a915280bc319a7c5fd21ab45a614ebb52fc2"
+                },
+                "listen": "join-org",
+                "contents": [
+                    {
+                        "_id": "5c6debcf0e758dd951c0aeda",
+                        "name": "message",
+                        "type": "string",
+                        "value": "apply-join-org, please process this request!"
+                    },
+                    {
+                        "_id": "5c6debcf0e758dd951c0aed9",
+                        "name": "org",
+                        "type": "data.org",
+                        "value": {
+                            "_id": "5c6deb8a0e758dd951c0aec2",
+                            "path": "class1"
+                        }
+                    }
+                ],
+                "sender": {
+                    "_id": "5c6deba80e758dd951c0aed6",
+                    "email": "user2@example.com"
+                },
+                "createdAt": "2019-02-21T00:07:43.178Z",
+                "updatedAt": "2019-02-21T00:07:43.178Z",
+                "__v": 0
+            }
+        ]
+    }
 }
 ```
