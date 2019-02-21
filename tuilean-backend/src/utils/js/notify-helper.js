@@ -38,44 +38,53 @@ module.exports = function(context, options) {
 
   const find = async notifyData => {
 
-    let { from, to, from_channel, to_channel, from_scopes, to_scopes, listen } = notifyData;
+    let { sent, received, from, to, from_channel, to_channel, from_scopes, to_scopes } = notifyData;
+
+    from_scopes = from_scopes || sent && sent.from_scopes || sent && sent.scopes || from && from.from_scopes || from && from.scopes || from_channel && from_channel.from_scopes || from_channel && from_channel.scopes;
+    from_channel = from_channel || sent && sent.from_channel || sent && sent.channel || from && from.channel || from && from.from_channel;
+
+    to_scopes = to_scopes || received && received.to_scopes || received && received.scopes || to && to.scopes || to && to.to_scopes || to_channel && to_channel.to_scopes || to_channel && to_channel.scopes;
+    to_channel = to_channel || received && received.to_channel || received && received.channel || to && to.channel || to && to.to_channel;
 
     from_scopes = await channelHelper.formatScope(from_scopes);
     to_scopes = await channelHelper.formatScope(to_scopes);
-    from_channel = await channelHelper.getChannel(from_channel) || await channelHelper.getChannel(from) || await channelHelper.getChannel({scopes: from_scopes});
-    to_channel = await channelHelper.getChannel(to_channel) || await channelHelper.getChannel(to) || await channelHelper.getChannel({scopes: to_scopes});
+    from_channel = await channelHelper.getChannel(from_channel) || await channelHelper.getChannel({scopes: from_scopes});
+    to_channel = await channelHelper.getChannel(to_channel) || await channelHelper.getChannel({scopes: to_scopes});
 
-    let sent = notifyData.send || { $limit: 20, $skip : 0, $sort: { createdAt: -1 }};
-    sent.$sort = sent.$sort || { createdAt: -1 };
-    let receive = notifyData.receive || { $limit: 20, $skip : 0, $sort: { createdAt: -1 }};
-    receive.$sort = receive.$sort || { createdAt: -1 };
-    let sent_notifications, receive_notifications;
+    sent = sent || {};
+    sent = Object.assign({ $limit: 20, $skip : 0, $sort: { createdAt: -1 }}, sent) ;
+    
+    received = received || {};
+    received = Object.assign({ $limit: 20, $skip : 0, $sort: { createdAt: -1 }}, received) ;
 
-    if ( listen){
-      if (sent){
-        if (from_channel){
-          sent = Object.assign(sent, {
-            'from_channel._id': from_channel._id,
-            listen
-          });
-          const finds = await notificationService.find({query:sent});
-          sent_notifications = finds.data;
-        }
-      }
+    const to_listen = to && to.listen || received && received.listen;
+    const from_listen = from && from.listen || sent && sent.listen;
+    
+    let sent_notifications, received_notifications;
 
-      if(receive){
-        if (to_channel){
-          receive = Object.assign(receive, {
-            'to_channel._id': to_channel._id,
-            listen
-          });
-          const finds = await notificationService.find({query:receive});
-          receive_notifications = finds.data;
-        }
-      }
+    if (from_listen && sent && from_channel){
+      const finds = await notificationService.find({query:{
+        $limit: received.$limit,
+        $skip: received.$skip,
+        $sort: received.$sort,
+        'from_channel._id': from_channel._id,
+        listen: from_listen
+      }});
+      sent_notifications = finds.data;
     }
 
-    return {sent_notifications, receive_notifications };
+    if(to_listen && received && to_channel){
+      const finds = await notificationService.find({query:{
+        $limit: sent.$limit,
+        $skip: sent.$skip,
+        $sort: sent.$sort,
+        'to_channel._id': to_channel._id,
+        listen: to_listen
+      }});
+      received_notifications = finds.data;
+    }
+
+    return {sent_notifications, received_notifications };
   };
 
   return {send, find };
