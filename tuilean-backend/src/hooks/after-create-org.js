@@ -50,7 +50,7 @@ module.exports = function (options = {}) {
       });
       await channelHelper.createChannel(
         {
-          path: '#org#'+ o.path + '#operation#' + 'org-user-admin',
+          path: 'org#'+ o.path + '#operation#' + 'org-user-admin',
           scopes: [
             {
               owner: {
