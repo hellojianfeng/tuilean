@@ -18,7 +18,22 @@ module.exports = function (app) {
     footer: { type: String },
   });
 
-  const { channel_obj } = require('./schemas')(app);
+  const { channel_obj, compact_user, user_scope } = require('./schemas')(app);
+
+  const statusSchema = new Schema({
+    name: { type: String },
+    path: { type: String }, 
+    tags: { type: String },
+    title: String,
+    description: { type: String },
+    processer: {
+      user: compact_user,
+      scopes: [ user_scope ],
+    },
+    processer_hash: String, //easy for search
+    value: { type: Schema.Types.Mixed },
+    data: { type: Schema.Types.Mixed }
+  });
 
   const notifications = new Schema({
     listen: String,
@@ -31,6 +46,10 @@ module.exports = function (app) {
     from_channel: channel_obj,
     to_channel: channel_obj,
     contents: [ contentSchema ],
+    status:{
+      current: statusSchema,
+      history: [ statusSchema ]
+    },
     sender: {
       _id: { type: Schema.Types.ObjectId },
       email: String

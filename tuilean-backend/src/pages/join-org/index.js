@@ -24,7 +24,7 @@ module.exports = async function (context, options) {
     return context.result = await buildResult.page({ user_orgs });
   }
 
-  if (action === 'find-orgs'){
+  if (action === 'find-org'){
     let { user_orgs } = await contextParser.parse();
     user_orgs = Object.values(user_orgs);
     const listOfPath = user_orgs.map ( o => {

@@ -6,6 +6,7 @@ module.exports = async function (context, options = {}) {
   const action = context.data.action || 'open';
   const contextParser = require('../../../utils/js/context-parser')(context,options);
   const buildResult = require('../../../utils/js/build-result')(context,options);
+  const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
   const _ = require('lodash');
 
   //const mongooseClient = context.app.get('mongooseClient');
@@ -148,6 +149,18 @@ module.exports = async function (context, options = {}) {
       return u;
     }));
     return context;
+  }
+
+  if (action === 'find-join-org-requests'){
+    const { operation_org } = await contextParser.parse();
+    const status = context.data.data && context.data.data.status || 'new';
+    const query = {
+      'to_channel.path': 'org#' + operation_org.path + '#operation' + 'org-user-admin',
+      'listen':'join-org',
+      status 
+    };
+    const requests = await notifyHelper.find(query);
+    context.result = await buildResult.operation({ join_org_requests: requests });
   }
 
   return context;

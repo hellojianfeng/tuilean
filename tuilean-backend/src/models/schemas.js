@@ -21,6 +21,8 @@ module.exports = function (app) {
     path: String
   }, { _id: false });
 
+  const compact_org = orgSchema;
+
   const scopeOwner = new Schema({
     user: String,
     operation: orgObj,
@@ -71,6 +73,19 @@ module.exports = function (app) {
     scopes: [ scopeSchema ]
   }, {_id: false });
 
+  const compact_user = new Schema({
+    _id: { type: Schema.Types.ObjectId },
+    email: String
+  }, {_id: false });
+
+  const user_scope = new Schema({
+    org: compact_org,
+    operation: orgObj,
+    role: orgObj,
+    permission: orgObj,
+    page: String
+  }, {_id: false });
+
   return {
     channel_obj: channelSchema,
     owner_channel: channelSchema,
@@ -78,6 +93,7 @@ module.exports = function (app) {
     compact_org_obj: orgObj,
     compact_org: orgSchema.page,
     channel_operation_scope,
-    channel_page_scope
-  };
+    channel_page_scope,
+    compact_user,
+    user_scope  };
 };
