@@ -1,6 +1,6 @@
 # join-org page
 this page is used for join org by user.
-support actions: open(default), find-orgs, apply-join
+support actions: open(default), find-org, apply-join
 
 ## prerequisite
 
@@ -101,19 +101,19 @@ This action return orgs for user to join
 ```JSON
 {
   "page":"join-org",
-  "action":"find-orgs",
+  "action":"find-org",
   "data":{
     "path":"class1"
   }
 }
 ```
 
-#### find-orgs Action Response Data
+#### find-org Action Response Data
 
 ```JSON
 {
     "page": "join-org",
-    "action": "find-orgs",
+    "action": "find-org",
     "data": {
         "path": "class1"
     },
@@ -147,7 +147,7 @@ This action return orgs for user to join
 }
 ````
 
-#### join-orgs Action Remarks
+#### join-org Action Remarks
 
 **page**: required
 

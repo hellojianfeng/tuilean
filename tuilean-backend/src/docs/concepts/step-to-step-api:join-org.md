@@ -6,17 +6,16 @@ This document describe steps to use api to complete join org task, these steps i
 3. create org. access http://xxx/pages to create org, here create a school class as org
 4. initialize org. access http://xxx/do-operation to initialize org, org will equiped with configured roles and so on.
 5. create second user. say user2, this user will join school class created before
-6. join org. access http://xxx/pages with page name of join-org to join org
-7. check sent notification. access http://xxx/notify to get sent notification by applying user
-8. check received notification. access http://xxx/notify to get received notification to org-user-admin operation
+6. join org find-org action. find orgs for join
+7. join org apply-org action. access http://xxx/pages with page name of join-org and action name of apply-join to join org
+8. check sent notification. access http://xxx/notify to get sent notification by applying user
+9. check received notification. access http://xxx/notify to get received notification to org-user-admin operation
 
-## API For Join Org
+## API For Create User
 
 ### API detail:
 
-before access api, please add user token into header of Authorization
-
-**URL** : http://host/pages
+**URL** : http://host/users
 
 **Method**: POST
 
@@ -24,7 +23,7 @@ before access api, please add user token into header of Authorization
 
 ```JSON
 {
-    "email":"user2@example.com",
+    "email":"user1@example.com",
     "password":"secret"
 }
 ```
@@ -41,13 +40,41 @@ before access api, please add user token into header of Authorization
         "rejected": []
     },
     "_id": "5c6ce5ebc26fd0c3b55dae42",
-    "email": "user2@example.com",
+    "email": "user1@example.com",
     "roles": [],
     "permissions": [],
     "operations": [],
     "createdAt": "2019-02-20T05:30:19.779Z",
     "updatedAt": "2019-02-20T05:30:19.779Z",
     "__v": 0
+}
+```
+
+## API For Login User
+
+### API detail:
+
+**URL** : http://host/authentication
+
+**Method**: POST
+
+**POST Data**:
+
+```JSON
+{
+    "email":"user1@example.com",
+    "password":"secret",
+    "strategy":"local"
+}
+```
+
+**Response**:
+remarks for response:
+1. please copy accessToken and put into Authorization header in follow request for identify user.
+
+```JSON
+{
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6ImFjY2VzcyJ9.eyJ1c2VySWQiOiI1YzZkZWI2YTBlNzU4ZGQ5NTFjMGFlYzAiLCJpYXQiOjE1NTA4MTI3ODcsImV4cCI6MTU1MDg5OTE4NywiYXVkIjoiaHR0cHM6Ly95b3VyZG9tYWluLmNvbSIsImlzcyI6ImZlYXRoZXJzIiwic3ViIjoiYW5vbnltb3VzIiwianRpIjoiZTQ0MDVhNzgtMjU2Yi00NWQ3LTliNGYtY2IyOTM5OWI4NWY5In0.SRdNhNXqy1swrgF_cLXgRyKm2R5aQfyCzgNNzHnvKAc"
 }
 ```
 
@@ -328,6 +355,157 @@ please note that:
 
 
 ## Create second user - ignore, same as create first user
+
+## API For Find Orgs To Join Org
+
+### API detail:
+
+before access api, please add user token into header of Authorization
+
+**URL** : http://host/pages
+
+**Method**: POST
+
+**POST Data**:
+
+please note that:
+
+1. page name must be 'join-org''
+2. action must be 'find-org' to execute join action. actually join-org also support other actions, please refer to api document for more actions
+3. can provide search data under data property. please refer to https://docs.feathersjs.com/ for syntax of query parameters
+
+```JSON
+{
+    "page":"join-org",
+    "action":"find-org",
+    "data":{
+        "$limit": 20
+    }
+}
+```
+
+**Response**:
+
+return org list for user to join
+
+```JSON
+{
+    "page": "join-org",
+    "action": "find-org",
+    "data": {},
+    "user": {
+        "_id": "5c6deba80e758dd951c0aed6",
+        "email": "user2@example.com"
+    },
+    "result": [
+        {
+            "_id": "5c6deb8a0e758dd951c0aec2",
+            "channels": {
+                "allow": [],
+                "joined": [],
+                "joining": [],
+                "inviting": [],
+                "rejected": []
+            },
+            "name": "class1",
+            "type": {
+                "_id": "5c6deb8a0e758dd951c0aec1",
+                "path": "school.class.primary"
+            },
+            "path": "class1",
+            "profiles": [],
+            "follows": [],
+            "createdAt": "2019-02-21T00:06:34.363Z",
+            "updatedAt": "2019-02-21T00:06:34.363Z",
+            "__v": 0
+        },
+        {
+            "_id": "5c6f801e603c804268ab9b76",
+            "channels": {
+                "allow": [],
+                "joined": [],
+                "joining": [],
+                "inviting": [],
+                "rejected": []
+            },
+            "name": "class2",
+            "type": {
+                "_id": "5c6deb8a0e758dd951c0aec1",
+                "path": "school.class.primary"
+            },
+            "path": "class2",
+            "profiles": [],
+            "follows": [],
+            "createdAt": "2019-02-22T04:52:46.765Z",
+            "updatedAt": "2019-02-22T04:52:46.765Z",
+            "__v": 0
+        },
+        {
+            "_id": "5c6f8023603c804268ab9b83",
+            "channels": {
+                "allow": [],
+                "joined": [],
+                "joining": [],
+                "inviting": [],
+                "rejected": []
+            },
+            "name": "class3",
+            "type": {
+                "_id": "5c6deb8a0e758dd951c0aec1",
+                "path": "school.class.primary"
+            },
+            "path": "class3",
+            "profiles": [],
+            "follows": [],
+            "createdAt": "2019-02-22T04:52:51.808Z",
+            "updatedAt": "2019-02-22T04:52:51.808Z",
+            "__v": 0
+        },
+        {
+            "_id": "5c6f802b603c804268ab9b90",
+            "channels": {
+                "allow": [],
+                "joined": [],
+                "joining": [],
+                "inviting": [],
+                "rejected": []
+            },
+            "name": "class4",
+            "type": {
+                "_id": "5c6deb8a0e758dd951c0aec1",
+                "path": "school.class.primary"
+            },
+            "path": "class4",
+            "profiles": [],
+            "follows": [],
+            "createdAt": "2019-02-22T04:52:59.932Z",
+            "updatedAt": "2019-02-22T04:52:59.932Z",
+            "__v": 0
+        },
+        {
+            "_id": "5c6f8030603c804268ab9b9d",
+            "channels": {
+                "allow": [],
+                "joined": [],
+                "joining": [],
+                "inviting": [],
+                "rejected": []
+            },
+            "name": "class5",
+            "type": {
+                "_id": "5c6deb8a0e758dd951c0aec1",
+                "path": "school.class.primary"
+            },
+            "path": "class5",
+            "profiles": [],
+            "follows": [],
+            "createdAt": "2019-02-22T04:53:04.836Z",
+            "updatedAt": "2019-02-22T04:53:04.836Z",
+            "__v": 0
+        }
+    ]
+}
+```
 
 ## API For Join Org
 

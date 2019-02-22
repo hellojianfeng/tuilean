@@ -82,20 +82,34 @@ module.exports = function (options = {}) {
                       description: 'must provide path as this value',
                       required: true
                     },
-                    title: { type: 'string' },
+                    title: { type: 'string', required: true },
                     description: { type: 'string' },
                     contents: [
                       {
                         name: 'org',
-                        type: 'data.org',
+                        type: 'object.compact_org',
+                        value: 'data.org',
                         description: 'applying org data with _id and path',
-                        value: {
-                          type: 'object',
-                          description: 'org object with _id and path',
-                          required: true
+                        data: {
+                          org: {
+                            type: 'object',
+                            description: 'org object with _id and path',
+                            required: true
+                          }
                         }
                       }
-                    ]
+                    ],
+                    workflow: {
+                      current: {
+                        operations: [
+                          {
+                            path: 'org-user-admin',
+                            action: 'process-apply',
+                            data: 'contents.data'
+                          }
+                        ]
+                      }
+                    }
                   }
                 ]
               }
