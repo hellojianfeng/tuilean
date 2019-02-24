@@ -2,6 +2,7 @@
 module.exports = function(context, options) {
   const channelHelper = require('./channel-helper')(context,options);
   const notificationService = context.app.service('notifications');
+  const operationHelper = require('./operation-helper')(context,options);
   //const contextParser = require('../utils/js/context-parser')(context, options);
 
 
@@ -13,6 +14,52 @@ module.exports = function(context, options) {
   //   return re.test(String(email).toLowerCase());
   // };
 
+  const formatNotificationWorkflowOperation = (opData, notifyData) => {
+    const operation = {};
+    operation.path = opData && opData.path || opData && opData.operation;
+    operation.action = opData && opData.action;
+
+    if (opData && opData.data){
+      if (opData.data.indexof('data.contents[]')){
+        const key = opData.data.replace('data.contents[].');
+        operation.data = operation.data || [];
+        notifyData.contents.map ( content => {
+          if (content[key]){
+            operation.data = operation.data || [];
+            operation.data.push(content[key]);
+          }
+        });
+      }
+    }
+    return operation;
+  };
+
+  const doBeforeSendNotification = async data => {
+    const ret = { results: []};
+    let { notifyData, to_channel } = data;
+    //from_channel = await channelHelper.getChannel(from_channel || notifyData.from_channel);
+    to_channel = await channelHelper.getChannel(to_channel || notifyData.to_channel);
+
+    if(to_channel){
+      if (to_channel.allow && to_channel.allow.listens){
+        for ( const listen of to_channel.allow.listens){
+          if (listen.workflow && listen.workflow.before_send && listen.workflow.before_send.operations){
+            for ( const op of listen.workflow.before_send.operations){
+              const operation = formatNotificationWorkflowOperation(op, notifyData);
+              const result = await operationHelper.doOperation(operation);
+              ret.results.push({ op, result});
+            }
+          }
+        }
+      }
+    }
+
+    return ret;
+  };
+  const doAfterSentNotification = async data => {
+    return data;
+  };
+
   const send = async notifyData => {
     const notificationService = context.app.service('notifications');
     //return await notifyService.create({action: 'send', data: options},context.params);
@@ -23,11 +70,19 @@ module.exports = function(context, options) {
 
     if (from_channel && to_channel && listen && contents){
       if (await channelHelper.checkAllowListen(notifyData)){
+        const beforeResult = await doBeforeSendNotification({notifyData, from_channel, to_channel}) || {};
+        if (beforeResult && beforeResult.error){
+          return beforeResult.error;
+        }
         notifyData.sender = context.params.user;
         const created_to = await notificationService.create(notifyData);
+        const afterResult = await doAfterSentNotification(notifyData) || {};
+        if (afterResult && afterResult.error){
+          return afterResult.error;
+        }
         const event_id = 'notify' + '-'+ listen + '-' + to_channel._id;
         context.service.emit(event_id, {data: created_to});
-        return { notification: created_to, emit: event_id};
+        return { notification: created_to, emit: event_id, before_sent_result: beforeResult, after_send_result: afterResult};
       } else {
         throw new Error('not allow notify!');
       }
@@ -53,13 +108,13 @@ module.exports = function(context, options) {
 
     sent = sent || {};
     sent = Object.assign({ $limit: 20, $skip : 0, $sort: { createdAt: -1 }}, sent) ;
-    
+
     received = received || {};
     received = Object.assign({ $limit: 20, $skip : 0, $sort: { createdAt: -1 }}, received) ;
 
     const to_listen = to && to.listen || received && received.listen;
     const from_listen = from && from.listen || sent && sent.listen;
-    
+
     let sent_notifications, received_notifications;
 
     if (from_listen && sent && from_channel){

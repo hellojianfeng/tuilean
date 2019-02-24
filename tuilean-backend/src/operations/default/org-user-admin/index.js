@@ -6,11 +6,15 @@ module.exports = async function (context, options = {}) {
   const action = context.data.action || 'open';
   const contextParser = require('../../../utils/js/context-parser')(context,options);
   const buildResult = require('../../../utils/js/build-result')(context,options);
+  const userHelper = require('../../../utils/js/user-helper')(context,options);
   const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
+  const operationHelper = require('../../../utils/js/operation-helper')(context,options);
   const _ = require('lodash');
 
   //const mongooseClient = context.app.get('mongooseClient');
   const userService = context.app.service('users');
+
+  const { operation_org } = await contextParser.parse();
 
   //open action return org user list
   if (action === 'open'){
@@ -152,15 +156,49 @@ module.exports = async function (context, options = {}) {
   }
 
   if (action === 'find-join-org-requests'){
-    const { operation_org } = await contextParser.parse();
+
     const status = context.data.data && context.data.data.status || 'new';
     const query = {
       'to_channel.path': 'org#' + operation_org.path + '#operation' + 'org-user-admin',
       'listen':'join-org',
-      status 
+      'data.status.current.value': status
     };
     const requests = await notifyHelper.find(query);
     context.result = await buildResult.operation({ join_org_requests: requests });
+  }
+
+  if (action === 'process-join-org'){
+    let processResult = context.data.data && context.data.data.process_result || {};
+    const joinOrgRequest = context.data.data && context.data.data.join_org_request;
+    const configuration = operationHelper.getConfiguration();
+
+    const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
+
+    if (allowJoinOrg === 'always'){
+      // add user into org immediately
+      const { everyone_role } = await contextParser.parse();
+      userHelper.add_user_role(everyone_role);
+    }
+
+    if (allowJoinOrg === 'need_approve'){
+      //
+
+    }
+
+    if (processResult && joinOrgRequest){
+      if (typeof processResult === 'string'){
+        processResult = { value: processResult };
+      }
+      processResult.title = processResult.title || 'Join Org Process Result';
+      processResult.path = processResult.path || 'join-org-process-result';
+
+      if(['approved','rejected','processing'].includes(processResult.value)){
+        await notifyHelper.updateNotify({
+          notification: joinOrgRequest,
+          status: processResult
+        });
+      }
+    }
   }
 
   return context;
