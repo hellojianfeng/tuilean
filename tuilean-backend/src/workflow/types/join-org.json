@@ -1,0 +1,29 @@
+{
+    "apply-join-org":{
+        "status":["initial"],
+        "actions":[
+            {
+                "page": "join-org",
+                "action": "apply-join",
+                "users": "$anyone"
+            }
+        ],
+        "next":{
+            "status":["applying"],
+            "data":{}
+        }
+    },
+    "join-org-admin":{
+        "status":["applying"],
+        "actions": [
+            {
+                "actions":[
+                    {
+                        "page": "org-user-admin",
+                        "action": "admin-join"
+                    }
+                ]
+            }
+        ]
+    }
+}

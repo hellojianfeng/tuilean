@@ -8,6 +8,7 @@ module.exports = async function (context, options = {}) {
   const buildResult = require('../../../utils/js/build-result')(context,options);
   const userHelper = require('../../../utils/js/user-helper')(context,options);
   const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
+  const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
   const operationHelper = require('../../../utils/js/operation-helper')(context,options);
   const _ = require('lodash');
 
@@ -157,50 +158,103 @@ module.exports = async function (context, options = {}) {
 
   if (action === 'find-join-org-requests'){
 
-    const status = context.data.data && context.data.data.status || 'new';
-    const query = {
-      'to_channel.path': 'org#' + operation_org.path + '#operation' + 'org-user-admin',
-      'listen':'join-org',
-      'data.status.current.value': status
+    const workflowService = context.app.service('workflows');
+
+    const { current_operation }= await context.parse();
+
+    const wQuery = {
+      type: 'join-org',
+      status:'applying',
+      'actions.operation._id': current_operation._id
     };
-    const requests = await notifyHelper.find(query);
-    context.result = await buildResult.operation({ join_org_requests: requests });
+
+    const finds = workflowService.find ({query: wQuery});
+
+    const workflows = finds.data;
+
+    const requests = [];
+
+    workflows.map ( wf => {
+      requests.push({
+        type: 'join-org',
+        from: wf.previous.actions[0],
+        status: wf.current.status,
+        workflow: wf
+      });
+    });
+
+    return context.result = await buildResult.operation({ join_org_requests: requests });
   }
 
   if (action === 'process-join-org'){
-    let processResult = context.data.data && context.data.data.process_result || {};
-    const joinOrgRequest = context.data.data && context.data.data.join_org_request;
-    const configuration = operationHelper.getConfiguration();
+    const { workflow } = context.data.data;
 
-    const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
+    const current = workflow.current;
+    const previous = workflow.previous;
 
-    if (allowJoinOrg === 'always'){
-      // add user into org immediately
+    const processData = current.data;
+
+    if (current && current.status === 'applying' && previous && processData && processData.org){
+      const configuration = operationHelper.getConfiguration();
+      const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
       const { everyone_role } = await contextParser.parse();
-      userHelper.add_user_role(everyone_role);
-    }
 
-    if (allowJoinOrg === 'need_approve'){
-      //
-
-    }
-
-    if (processResult && joinOrgRequest){
-      if (typeof processResult === 'string'){
-        processResult = { value: processResult };
+      if (allowJoinOrg === 'always'){
+        // add user into org immediately
+        userHelper.add_user_role(everyone_role);
+        await workflowHelper.next({workflow, status: 'processed', data: {'join-org-result': 'approved'}});
       }
-      processResult.title = processResult.title || 'Join Org Process Result';
-      processResult.path = processResult.path || 'join-org-process-result';
-
-      if(['approved','rejected','processing'].includes(processResult.value)){
-        await notifyHelper.updateNotify({
-          notification: joinOrgRequest,
-          status: processResult
-        });
+  
+      if (allowJoinOrg === 'need_approve'){
+        //
+        let processResult = context.data.data && context.data.data.process_result;
+        if (processResult){
+          if (typeof process_result === 'string'){
+            processResult = { value: processResult };
+          }
+          processResult.title = processResult.title || 'Process Result for Join-Org';
+          processResult.path = processResult.path || 'join-org-process-result';
+  
+          if(['approved','rejected','processing'].includes(processResult.value)){
+            userHelper.add_user_role(everyone_role);
+            await workflowHelper.next({workflow, status: 'processed', data: {'join-org-result': processResult}});
+          }
+        }
       }
     }
+
+    //   let processResult = context.data.data && context.data.data.process_result || {};
+    //   const joinOrgRequest = context.data.data && context.data.data.join_org_request;
+    //   const configuration = operationHelper.getConfiguration();
+
+    //   const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
+
+    //   if (allowJoinOrg === 'always'){
+    //     // add user into org immediately
+    //     const { everyone_role } = await contextParser.parse();
+    //     userHelper.add_user_role(everyone_role);
+    //   }
+
+    //   if (allowJoinOrg === 'need_approve'){
+    //     //
+
+    //   }
+
+    //   if (processResult && joinOrgRequest){
+    //     if (typeof processResult === 'string'){
+    //       processResult = { value: processResult };
+    //     }
+    //     processResult.title = processResult.title || 'Join Org Process Result';
+    //     processResult.path = processResult.path || 'join-org-process-result';
+
+  //     if(['approved','rejected','processing'].includes(processResult.value)){
+  //       await notifyHelper.updateNotify({
+  //         notification: joinOrgRequest,
+  //         status: processResult
+  //       });
+  //     }
+  //   }
   }
 
   return context;
 };
-
