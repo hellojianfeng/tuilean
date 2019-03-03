@@ -1,5 +1,5 @@
 // workflows-model.js - A mongoose model
-// 
+//
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
@@ -51,6 +51,10 @@ module.exports = function (app) {
     previous: workSchema,
     current: workSchema,
     next: workSchema,
+    sequence: {
+      status:[ String ],
+      position: 0
+    },
     history: [ workSchema ],
     data: { type: Schema.type.Mixed }
   }, {

@@ -7,7 +7,7 @@ module.exports = async function (context, options = {}) {
   const contextParser = require('../../../utils/js/context-parser')(context,options);
   const buildResult = require('../../../utils/js/build-result')(context,options);
   const userHelper = require('../../../utils/js/user-helper')(context,options);
-  const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
+  //const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
   const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
   const operationHelper = require('../../../utils/js/operation-helper')(context,options);
   const _ = require('lodash');
@@ -15,7 +15,7 @@ module.exports = async function (context, options = {}) {
   //const mongooseClient = context.app.get('mongooseClient');
   const userService = context.app.service('users');
 
-  const { operation_org } = await contextParser.parse();
+  //const { operation_org } = await contextParser.parse();
 
   //open action return org user list
   if (action === 'open'){
@@ -156,7 +156,7 @@ module.exports = async function (context, options = {}) {
     return context;
   }
 
-  if (action === 'find-join-org-requests'){
+  if (action === 'find-join-org-works'){
 
     const workflowService = context.app.service('workflows');
 
@@ -168,26 +168,28 @@ module.exports = async function (context, options = {}) {
       'actions.operation._id': current_operation._id
     };
 
-    const finds = workflowService.find ({query: wQuery});
+    const finds = workflowService.find({query: wQuery});
 
     const workflows = finds.data;
 
-    const requests = [];
+    const works = [];
 
     workflows.map ( wf => {
-      requests.push({
+      works.push({
         type: 'join-org',
-        from: wf.previous.actions[0],
-        status: wf.current.status,
+        current: wf.current,
+        previous: _.pick(wf.previous,['actions','status']),
         workflow: wf
       });
     });
 
-    return context.result = await buildResult.operation({ join_org_requests: requests });
+    return context.result = await buildResult.operation({ join_org_works: works });
   }
 
   if (action === 'process-join-org'){
-    const { workflow } = context.data.data;
+    const wf_data = context.data.data.workflow || context.data.data;
+
+    const workflow = await workflowHelper.findOrCreate(wf_data);
 
     const current = workflow.current;
     const previous = workflow.previous;
@@ -204,7 +206,7 @@ module.exports = async function (context, options = {}) {
         userHelper.add_user_role(everyone_role);
         await workflowHelper.next({workflow, status: 'processed', data: {'join-org-result': 'approved'}});
       }
-  
+
       if (allowJoinOrg === 'need_approve'){
         //
         let processResult = context.data.data && context.data.data.process_result;
@@ -214,7 +216,7 @@ module.exports = async function (context, options = {}) {
           }
           processResult.title = processResult.title || 'Process Result for Join-Org';
           processResult.path = processResult.path || 'join-org-process-result';
-  
+
           if(['approved','rejected','processing'].includes(processResult.value)){
             userHelper.add_user_role(everyone_role);
             await workflowHelper.next({workflow, status: 'processed', data: {'join-org-result': processResult}});
