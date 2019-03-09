@@ -91,7 +91,7 @@ module.exports = function (app) {
     owner_channel: channelSchema,
     channel_scope: scopeSchema,
     compact_org_obj: orgObj,
-    compact_org: orgSchema.page,
+    compact_org: orgSchema,
     channel_operation_scope,
     channel_page_scope,
     compact_user,

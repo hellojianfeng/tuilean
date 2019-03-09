@@ -386,7 +386,7 @@ module.exports = function (context,options={}, refresh=false) {
 
   const getOrgUserOperations = async ( options={} ) => {
     const user = options.user || context.params.user;
-    const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
+    const org = await getOrg(options.org) || await getCurrentOperationOrg() || await getCurrentOrg();
     const idList = user.operations.map ( o => {
       if(o.org_path === org.path)
       {return o._id;}
@@ -704,7 +704,7 @@ module.exports = function (context,options={}, refresh=false) {
     getOrg, getRole, getRoles, getPermission, getPermissions, getOperation, getOperations, getUser, getUsers,
     getCurrentOrg, getCurrentOperation, getCurrentOperationOrg, getFollowOrg, getCurrentFollowOrg,
     getEveryoneRole, getEveryonePermission, getEveryoneRolePermissions, getEveryoneRoleOperations, getEveryonePermissionOperations,
-    getOrgUserRoles, getOrgUserPermissions, getOrgUserFollowOperations, getOrgUserFollowPermissions,
+    getOrgUserRoles, getOrgUserPermissions, getOrgUserOperations, getOrgUserFollowOperations, getOrgUserFollowPermissions,
     getOrgUsers, getOrgRoles, getOrgPermissions, getOrgOperations,
     getChannel
   };

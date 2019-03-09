@@ -1,12 +1,14 @@
 const { authenticate } = require('@feathersjs/authentication').hooks;
 
+const beforeCreateWorkflow = require('../../hooks/before-create-workflow');
+
 module.exports = {
   before: {
     all: [ authenticate('jwt') ],
     find: [],
     get: [],
-    create: [],
-    update: [],
+    create: [beforeCreateWorkflow()],
+    update: [beforeCreateWorkflow()],
     patch: [],
     remove: []
   },

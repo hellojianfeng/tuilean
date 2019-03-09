@@ -3,7 +3,7 @@ module.exports = async function (context, options = {}) {
 
   //const operationData = context.data.data || {};
   //const operation = options.current_operation;
-  const action = context.data.action || 'open';
+  let action = context.data.action || 'open';
   const contextParser = require('../../../utils/js/context-parser')(context,options);
   const buildResult = require('../../../utils/js/build-result')(context,options);
   const userHelper = require('../../../utils/js/user-helper')(context,options);
@@ -16,6 +16,17 @@ module.exports = async function (context, options = {}) {
   const userService = context.app.service('users');
 
   //const { operation_org } = await contextParser.parse();
+
+  const workflow = context.data.data && context.data.data.workflow;
+
+  if (workflow){
+    if ( workflowHelper.matchNextAction({
+      workflow,action: { operation: { _id: context.params.operation._id }}})){
+      if (workflow.status === 'applying'){
+        action = 'process-join-org';
+      }
+    }
+  }
 
   //open action return org user list
   if (action === 'open'){
@@ -32,6 +43,13 @@ module.exports = async function (context, options = {}) {
     result.org_operations = operation_org_operations.filter(o=>{
       return o.path !== 'org-initialize';
     });
+
+    const next_workflows = await workflowHelper.find({
+      type: 'join-org',
+      status: 'processed',
+      next: { action: { operation: context.params.operation._id}}
+    });
+    result.next_workflows = next_workflows;
 
     context.result = await buildResult.operation(result);
 
@@ -158,19 +176,11 @@ module.exports = async function (context, options = {}) {
 
   if (action === 'find-join-org-works'){
 
-    const workflowService = context.app.service('workflows');
-
-    const { current_operation }= await context.parse();
-
-    const wQuery = {
+    const workflows = await workflowHelper.find({
       type: 'join-org',
-      status:'applying',
-      'actions.operation._id': current_operation._id
-    };
-
-    const finds = workflowService.find({query: wQuery});
-
-    const workflows = finds.data;
+      status: 'applying',
+      next: { action: {operation: { _id: context.params.operation._id}}}
+    });
 
     const works = [];
 
@@ -189,7 +199,7 @@ module.exports = async function (context, options = {}) {
   if (action === 'process-join-org'){
     const wf_data = context.data.data.workflow || context.data.data;
 
-    const workflow = await workflowHelper.findOrCreate(wf_data);
+    const workflow = await workflowHelper.getWorkflow(wf_data);
 
     const current = workflow.current;
     const previous = workflow.previous;

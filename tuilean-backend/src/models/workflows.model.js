@@ -4,42 +4,38 @@
 // for more of what you can do here.
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
-  const schemas = require('./schemas');
-  const { compact_user, compact_org_obj, compact_org } = schemas;
+  const schemas = require('./schemas')(app);
+  const { compact_org_obj, compact_org } = schemas;
   const { Schema } = mongooseClient;
-  // const historySchema = new Schema({
-  //   status: String,
-  //   data: { type: Schema.type.Mixed }
-  // });
   const actionSchema = new Schema({
     name: { type: String },
-    path: { type: String, required: true },
+    path: { type: String },
     page: String,
-    operation: compact_org_obj,
-    action: String,
-    users: [ compact_user ],
+    operation: { type: compact_org_obj },
+    users: [ String ],
     permissions: [ compact_org_obj ],
     roles: [ compact_org_obj ],
     orgs: [ compact_org ],
-    data: { type: Schema.type.Mixed }
+    data: { type: Schema.Types.Mixed }
   });
   const ownerSchema = new Schema({
     name: { type: String },
-    path: { type: String, required: true },
+    path: { type: String },
     page: String,
     operation: compact_org_obj,
-    users: [ compact_user ],
+    users: [ String ],
     permissions: [ compact_org_obj ],
     roles: [ compact_org_obj ],
     orgs: [ compact_org ],
-    data: { type: Schema.type.Mixed }
+    data: { type: Schema.Types.Mixed }
   });
   const workSchema = new Schema({
     name: { type: String },
-    path: { type: String, required: true },
+    path: { type: String },
     status: [ String ],
     actions:[ actionSchema ],
-    data: { type: Schema.type.Mixed }
+    actions_hash: [ String ],
+    data: { type: Schema.Types.Mixed }
   });
   const workflows = new Schema({
     name: { type: String },
@@ -51,12 +47,13 @@ module.exports = function (app) {
     previous: workSchema,
     current: workSchema,
     next: workSchema,
+    status: String,
     sequence: {
       status:[ String ],
       position: 0
     },
     history: [ workSchema ],
-    data: { type: Schema.type.Mixed }
+    data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true
   });
