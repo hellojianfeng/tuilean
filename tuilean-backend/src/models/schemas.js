@@ -86,6 +86,35 @@ module.exports = function (app) {
     page: String
   }, {_id: false });
 
+  const workflow_action = new Schema({
+    name: { type: String },
+    path: { type: String },
+    page: String,
+    operation: { type: orgObj },
+    users: [ String ],
+    permissions: [ orgObj ],
+    roles: [ orgObj ],
+    orgs: [ compact_org ],
+    data: { type: Schema.Types.Mixed }
+  },{_id: false});
+
+  const workflow_work = new Schema({
+    name: { type: String },
+    path: { type: String },
+    status: String ,
+    actions:[ workflow_action ],
+    actions_hash: [ String ],
+    data: { type: Schema.Types.Mixed }
+  });
+
+  const compact_workflow = new Schema({
+    _id: Schema.Types.ObjectId,
+    type: String,
+    path: String,
+    works: [ workflow_work],
+    data: Schema.Types.Mixed
+  },{_id: false});
+
   return {
     channel_obj: channelSchema,
     owner_channel: channelSchema,
@@ -95,5 +124,8 @@ module.exports = function (app) {
     channel_operation_scope,
     channel_page_scope,
     compact_user,
+    compact_workflow,
+    workflow_action,
+    workflow_work,
     user_scope  };
 };
