@@ -18,10 +18,13 @@ module.exports = function (app) {
     current: workflow_work,
     next: workflow_work,
     status: String,
-    sequence: {
-      status:[ String ],
-      position: 0
-    },
+    sequence: [
+      {
+        path: String,
+        status:[ String ],
+        position: { type: Number, default: 0 }
+      },
+    ],
     history: [ workflow_work ],
     data: { type: Schema.Types.Mixed }
   }, {

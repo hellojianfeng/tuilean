@@ -102,8 +102,7 @@ module.exports = function (app) {
     name: { type: String },
     path: { type: String },
     status: String ,
-    actions:[ workflow_action ],
-    actions_hash: [ String ],
+    actions: [ workflow_action ],
     data: { type: Schema.Types.Mixed }
   });
 

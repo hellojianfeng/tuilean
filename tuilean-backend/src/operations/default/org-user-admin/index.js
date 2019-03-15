@@ -44,12 +44,8 @@ module.exports = async function (context, options = {}) {
       return o.path !== 'org-initialize';
     });
 
-    const next_workflows = await workflowHelper.find({
-      type: 'join-org',
-      status: 'processed',
-      next: { action: { operation: context.params.operation._id}}
-    });
-    result.next_workflows = next_workflows;
+    const user_workflows = await workflowHelper.getUserWorkflows({operation: context.params.operation});
+    result.user_workflows = user_workflows;
 
     context.result = await buildResult.operation(result);
 
@@ -201,12 +197,11 @@ module.exports = async function (context, options = {}) {
 
     const workflow = await workflowHelper.getWorkflow(wf_data);
 
-    const current = workflow.current;
-    const previous = workflow.previous;
+    const next = workflow.next;
 
-    const processData = current.data;
+    const processData = next.data;
 
-    if (current && current.status === 'applying' && previous && processData && processData.org){
+    if (next && next.status === 'applying' && processData && processData.org){
       const configuration = operationHelper.getConfiguration();
       const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
       const { everyone_role } = await contextParser.parse();
