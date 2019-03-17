@@ -52,35 +52,36 @@ module.exports = async function (context, options) {
 
   if (action === 'apply-join'){
 
-    let { org } = pageData;
+    let org = await contextParser.getOrg(pageData);
 
-    const workflow = await workflowHelper.findOrCreate({
-      type:'join-org',
-      path:'page#join-org#user#'+ user.email,
-      owner: { page: 'join-org', users: [user.email]},
-      works: [
-        {
-          status: 'initial'
-        },
-        {
-          status: 'applying'
-        }
-      ],
-      sequence: {
-        status: ['applying','processed'],
-        position: 0
+    if (org){
+      const workflow = await workflowHelper.findOrCreate({
+        type:'join-org',
+        path:'apply-join-'+org.path,
+        owner: { page: 'join-org', users: [user.email]},
+        tasks: [
+          {
+            path: 'apply-join',
+            status_sequence: ['start','applying','processed','end'],
+            position: 0,
+            active: true
+          }
+        ],
+        works: [
+          { status:'start',action:{ page: 'join-org',users:[user.email] }},
+          { status:'applying',action:{ operation: 'org-user-admin',org }},
+          { status:'processed',action:{ page: 'join-org',users:[user.email] }},
+          { status:'end',action:{ page: 'join-org',users:[user.email] }}
+        ]
+      });
+
+      if (workflow){
+        await workflowHelper.start({workflow});
+        return await workflowHelper.next({workflow,status:'applying', data:{ user: user.email, org }});
       }
-    });
-
-    if (workflow){
-      await workflowHelper.registerWork({workflow, work: {status:'applying',action:{operation: 'org-user-admin',org}}});
-      await workflowHelper.registerWork({workflow, work: {status:'processed',action:{page: 'join-org',users:[user.email]}}});
-      
-      await workflowHelper.start({workflow, work: {action:{page: 'join-org',users:[user.email]}}});
-      return await workflowHelper.next({workflow,status:'applying', data:{ user: user.email, org }});
     }
-    
-    return { code: 301, error: 'no invalide workflow!'};
+
+    return { code: 301, error: 'fail to apply join org, please check input!'};
   }
 
   if (action === 'show-workflow'){

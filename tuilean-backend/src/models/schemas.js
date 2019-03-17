@@ -99,20 +99,19 @@ module.exports = function (app) {
   },{_id: false});
 
   const workflow_work = new Schema({
-    name: { type: String },
-    path: { type: String },
-    status: String ,
-    actions: [ workflow_action ],
+    workflow: {
+      _id: Schema.Types.ObjectId,
+      type: String,
+      path: String
+    },
+    work: {
+      _id: Schema.Types.ObjectId,
+      status: String
+    },
+    action:  workflow_action ,
+    action_hash: String ,
     data: { type: Schema.Types.Mixed }
   });
-
-  const compact_workflow = new Schema({
-    _id: Schema.Types.ObjectId,
-    type: String,
-    path: String,
-    works: [ workflow_work],
-    data: Schema.Types.Mixed
-  },{_id: false});
 
   return {
     channel_obj: channelSchema,
@@ -123,7 +122,6 @@ module.exports = function (app) {
     channel_operation_scope,
     channel_page_scope,
     compact_user,
-    compact_workflow,
     workflow_action,
     workflow_work,
     user_scope  };

@@ -42,13 +42,17 @@ module.exports = function(context, options) {
         oWorkflow.next = next;
         oWorkflow.status = next.status;
 
-        const sequence = oWorkflow.sequence;
-        sequence.position += 1;
-        if (oWorkflow.sequence.status.length < sequence.position +1){
-          oWorkflow.sequence.status.push(next.status);
+        const tasks = oWorkflow.tasks.filter( seq => { return seq.active === true; })[0];
+        tasks.position += 1;
+        if (tasks.status_sequence.length < tasks.position +1){
+          tasks.status_sequence.push(next.status);
         }
 
-        await workflowService.patch(oWorkflow._id, {history,previous:oWorkflow.previous, current:oWorkflow.current, next, status, sequence,data});
+        await workflowService.patch(
+          oWorkflow._id,
+          {
+            history,previous:oWorkflow.previous, current:oWorkflow.current, next, status, tasks,data
+          });
         //by default create a notify for workflow.next action
         let notify = true;
 
@@ -56,7 +60,7 @@ module.exports = function(context, options) {
           notify = false;
         }
 
-        const eventData = _.pick(oWorkflow,['_id','type','path','status','current','next','sequence']);
+        const eventData = _.pick(oWorkflow,['_id','type','path','status','current','next','tasks']);
         if (notify && notify.all){
           const eventId = 'workflow_'+ oWorkflow._id;
           context.service.emit(eventId, {data: eventData});
@@ -126,29 +130,33 @@ module.exports = function(context, options) {
   };
 
   const init = async ( options = {}) => {
-    const { workflow, works, sequence} = options;
+    let { workflow, works, tasks, status} = options;
 
-    if (workflow && works && sequence){
+    if (workflow && works && tasks){
       workflow.works = works;
-      workflow.sequence = sequence;
-      if (sequence.status && Array.isArray(sequence.status)){
-        sequence.position = sequence.position || 0;
-        const status = sequence.status[sequence.position];
-        if (status){
-          workflow.status = status;
-          const filters = works.filter ( o=> {
-            return o.status === status;
-          });
-          if (filters){
-            workflow.current = filters[0];
+      workflow.tasks = tasks;
+      if (!workflow.status){
+        tasks.map( task => {
+          if ( task.active === true && task.status_sequence && task.position){
+            status = task.status_sequence[task.position];
           }
-          await workflowService.patch(workflow._id, {works, sequence, status, current: workflow.current});
-          return workflow;
-        }
+        });
       }
-      return { code: 502, error:'make sure sequence.status is array and works contain current status!'};
+
+      if (status){
+        workflow.status = status;
+        const filters = works.filter ( o=> {
+          return o.status === workflow.status;
+        });
+        if (filters){
+          workflow.current = filters[0];
+        }
+        await workflowService.patch(workflow._id, {works, tasks, status, current: workflow.current});
+        return workflow;
+      }
+      return { code: 502, error:'make sure tasks.status_sequence is array and works contain current status!'};
     } else {
-      return { code: 501, error: 'must provide workflow, works and sequence for initialize!'};
+      return { code: 501, error: 'must provide workflow, works and tasks for initialize!'};
     }
   };
 
@@ -252,27 +260,29 @@ module.exports = function(context, options) {
 
     //otherwise create a workflow
 
-    return create(data);
+    return await create(data);
   };
 
   const create = async data => {
-    const { type, path, owner, works, sequence } = data;
-    if ( type && path && owner && sequence && works){
-      const status = sequence.status && sequence.position && sequence.status[sequence.position] || 'start';
-      return await workflowService.create({type, path, owner, works, sequence, status});
+    const { type, path, owner, works, tasks } = data;
+    if ( type && path && owner && tasks){
+      const workflow = await workflowService.create(data);
+      if (works){
+        await addWorks({workflow,works});
+      }
+      return workflow;
     }
     return { code: 201, error:'fail to create workflow, please make sure type|path|owner|sequance|works is ready!'};
   };
-
 
   const findOrCreateWork= async data => {
     let workData = data.work || data;
     if (workData && workData._id && workData.actions_hash){
       return workData;
     }
-    
+
     let work;
-    const workflow = await getWorkflow(data);
+    let workflow = await getWorkflow(data);
     if(workflow && workflow.works){
       if (workData && workData.status){
         work = workflow.works.filter( w => { return w.status === workData.status; })[0];
@@ -282,9 +292,10 @@ module.exports = function(context, options) {
     if (!work && workData.status && workData.actions){
       workflow.works.push(workData);
       await workflowService.patch(workflow._id, {works:workflow.works});
+      workflow = await workflowService.get(workflow._id);
       work = workflow.works.filter( w => { return w.status === workData.status; })[0];
     }
-    
+
     if (work && work._id){
       return work;
     }
@@ -303,7 +314,7 @@ module.exports = function(context, options) {
 
     const workflow = options.workflow && await getWorkflow(options.workflow);
 
-    if (workflow && workflow._id && workflow.works){
+    if (workflow && workflow._id){
       const work = await findOrCreateWork({workflow,work: workData});
       if (work && work._id && workData.actions){
         for ( const action of workData.actions){
@@ -324,7 +335,7 @@ module.exports = function(context, options) {
                 });
               }
             }
-          } 
+          }
           else if (action && action.operation)
           {
             let operation = action.operation;
@@ -398,7 +409,7 @@ module.exports = function(context, options) {
           }
         });
       });
-    }); 
+    });
     return { current_workflows, next_workflows};
   };
 
@@ -422,7 +433,7 @@ module.exports = function(context, options) {
     if ( org) {
       return getUserOrgWorkflows({org});
     }
-    
+
     const userWorkflows = user.workflows && user.workflows.joined || [];
 
     const page = options.page;
@@ -444,6 +455,33 @@ module.exports = function(context, options) {
     });
 
     return {current_workflows, next_workflows};
+  };
+
+  const getWorksByAction = async ( options = {}) => {
+    const { workflow, action } = options;
+    let next_works = [], current_works = [], all_works = [];
+    if (workflow && action){
+      if (workflow.current && workflow.current.actions_hash){
+        if (workflow.current.actions_hash.includes(objectHash(action))){
+          current_works.push(workflow.current);
+        }
+      }
+
+      if (workflow.next && workflow.next.actions_hash){
+        if (workflow.next.actions_hash.includes(objectHash(action))){
+          next_works.push(workflow.next);
+        }
+      }
+
+      if (workflow.works){
+        workflow.works.map ( w => {
+          if ( w.actions_hash && w.actions_hash.includes(objectHash(action))){
+            all_works.push(w);
+          }
+        });
+      }
+    }
+    return { next_works, current_works, all_works};
   };
 
   const getWorkflow = async (options ={}) => {
@@ -512,8 +550,8 @@ module.exports = function(context, options) {
     }
   };
 
-  return {start, end, init, current, next, find, findOrCreate, addWork, addWorks, 
-    getListens, getUserOrgWorkflows, getUserWorkflows,registerWork,
+  return {start, end, init, current, next, find, findOrCreate, addWork, addWorks,
+    getListens, getUserOrgWorkflows, getUserWorkflows,registerWork,getWorksByAction,
     matchAction, getWorkflow, matchNextAction, joinWork, create, addWorkActions
   };
 };
