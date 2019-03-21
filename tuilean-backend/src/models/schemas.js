@@ -108,8 +108,8 @@ module.exports = function (app) {
       _id: Schema.Types.ObjectId,
       status: String
     },
-    action:  workflow_action ,
-    action_hash: String ,
+    actions:  [workflow_action] ,
+    actions_hash: [String] ,
     data: { type: Schema.Types.Mixed }
   });
 

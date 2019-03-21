@@ -35,7 +35,7 @@ module.exports = function(context, options) {
           next.data = next && next.data ? Object.assign(next.data, data): data;
         }
       } else if (next && next.status && next.actions){
-        await addWork(oWorkflow,next);
+        await addWorkActions(oWorkflow,next);
       }
 
       if(next){
@@ -112,7 +112,7 @@ module.exports = function(context, options) {
       })[0];
       //if no start status, add it
       if(!oCurrent && actions.length > 0){
-        oCurrent = await addWork({workflow: oWorkflow, work: {status, actions}});
+        oCurrent = await addWorkActions({workflow: oWorkflow, work: {status, actions}});
       }
     }
     if (oCurrent){
@@ -289,7 +289,7 @@ module.exports = function(context, options) {
       }
     }
 
-    if (!work && workData.status && workData.actions){
+    if (!work && workData.status){
       workflow.works.push(workData);
       await workflowService.patch(workflow._id, {works:workflow.works});
       workflow = await workflowService.get(workflow._id);
@@ -303,7 +303,7 @@ module.exports = function(context, options) {
     return { code: 301, error:'fail to find and add work, please check input!'};
   };
 
-  const registerWork = async options => {
+  const registerWorkActions = async options => {
 
     const workData = options && options.work || options;
 
@@ -312,6 +312,8 @@ module.exports = function(context, options) {
       workData.actions.push(workData.action);
     }
 
+    const results = [];
+
     const workflow = options.workflow && await getWorkflow(options.workflow);
 
     if (workflow && workflow._id){
@@ -319,20 +321,29 @@ module.exports = function(context, options) {
       if (work && work._id && workData.actions){
         for ( const action of workData.actions){
           if (action.users){
-            let joinedWorks = [];
             for ( const u of action.users){
               const user = await contextParser.getUser(u);
-              if (user && user.workflows && user.workflows.joined){
-                user.workflows.joined.map( async wf => {
-                  if (wf._id.equals(workflow._id)){
-                    joinedWorks = wf.works && wf.works.filter( w => { w._id.equals(work._id);});
+              if (user && user.works && user.works.joined){
+                let isNewWork = true;
+                let isChanged = false;
+                user.works.joined.map( async w => {
+                  if (w._id.equals(work._id)){
+                    isNewWork = false;
                     //if not find work in user, add it
-                    if(joinedWorks.length < 1){
-                      wf.works.push(work);
-                      await userService.patch(user._id, {workflows: user.workflows});
+                    work.actions_hash = work.actions_hash || [];
+                    if (!work.actions_hash.includes(objectHash(action))){
+                      work.actions.push(action);
+                      work.actions_hash.push(objectHash(action));
+                      isChanged = true;
                     }
                   }
                 });
+                if(isNewWork){
+                  user.works.push({work: {_id: work._id, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
+                }
+                if(isNewWork || isChanged){
+                  results.push({ result: await userService.patch(user._id, {works: user.works}), work});
+                }
               }
             }
           }
@@ -347,34 +358,51 @@ module.exports = function(context, options) {
             }
             operation = await contextParser.getOperation(operation);
             if (operation && operation._id){
-              const joined = operation.workflows.joined.filter( wf => {
-                return wf._id.equals(workflow._id);
+              let isChanged = false, isNew = true;
+              operation.works.joined.filter( w => {
+                if (w._id.equals(work._id)){
+                  isNew = false;
+                  w.actions_hash = w.actions_hash || [];
+                  if(!w.actions_hash.includes(objectHash(action))){
+                    isChanged = true;
+                    w.action.push(action);
+                    w.actions_hash.push(objectHash(action));
+                  }
+                }
               });
-              if (joined.length === 0){
-                operation.workflows.joined.push({_id: workflow._id, type: workflow.type, path: workflow.path, works: [{_id: work._id, status: work.status}]});
-                await operationService.patch(operation._id, {workflows: operation.workflows});
+              if (isChanged || isNew){
+                results.push({
+                  result: await operationService.patch(operation._id, {works: operation.works}),
+                  work
+                });
               }
             }
           }
         }
-        return work;
+        return results;
       }
     }
     return { code: 302, error: 'fail to register work, please check input!'};
   };
 
-  const addWorks = async data => {
-    const { workflow, works} = data;
-    const results = [];
-    for ( const work of works){
-      results.push(await addWork({workflow, work}));
+  const registerWorks = async options => {
+    const works = options.works || options || [];
+    const workflow = options.workflow;
+    let results = [];
+
+    if (workflow && works){
+      for ( const work of works){
+        results = Object.assign(results, await registerWorkActions({workflow, work}));
+      }
     }
+
     return results;
+
   };
 
-  const joinWork = registerWork;
-  const addWorkActions = registerWork;
-  const addWork = registerWork;
+  const addWorks = registerWorks;
+
+  const addWorkActions = registerWorkActions;
 
   const getListens = (workflow, work) => {
     return {
@@ -550,8 +578,8 @@ module.exports = function(context, options) {
     }
   };
 
-  return {start, end, init, current, next, find, findOrCreate, addWork, addWorks,
-    getListens, getUserOrgWorkflows, getUserWorkflows,registerWork,getWorksByAction,
-    matchAction, getWorkflow, matchNextAction, joinWork, create, addWorkActions
+  return {start, end, init, current, next, find, findOrCreate, addWorks,
+    getListens, getUserOrgWorkflows, getUserWorkflows,registerWorkActions,getWorksByAction,
+    matchAction, getWorkflow, matchNextAction, create, addWorkActions
   };
 };
