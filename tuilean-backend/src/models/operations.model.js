@@ -15,7 +15,7 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
-  const { owner_channel, compact_workflow } = require('./schemas')(app);
+  const { owner_channel, workflow_work } = require('./schemas')(app);
 
   const operations = new Schema({
     name: { type: String, required: true },
@@ -39,13 +39,13 @@ module.exports = function (app) {
       inviting: [ owner_channel ],
       rejected: [ owner_channel ]
     },
-    workflows: {
-      allow: [ compact_workflow ],
-      joined: [ compact_workflow ],
-      joining: [ compact_workflow],
-      inviting: [ compact_workflow ],
-      rejected: [ compact_workflow ]
-    }
+    works: {
+      allow: [ workflow_work ],
+      joined: [ workflow_work ],
+      joining: [ workflow_work],
+      inviting: [ workflow_work ],
+      rejected: [ workflow_work ]
+    },
   }, {
     timestamps: true
   });

@@ -98,16 +98,20 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   },{_id: false});
 
+  const compact_workflow = new Schema({
+    _id: Schema.Types.ObjectId,
+    type: String,
+    path: String
+  },{_id: false});
+
+  const compact_work = new Schema({
+    _id: Schema.Types.ObjectId,
+    status: String
+  },{_id: false});
+
   const workflow_work = new Schema({
-    workflow: {
-      _id: Schema.Types.ObjectId,
-      type: String,
-      path: String
-    },
-    work: {
-      _id: Schema.Types.ObjectId,
-      status: String
-    },
+    workflow: compact_workflow,
+    work: compact_work,
     actions:  [workflow_action] ,
     actions_hash: [String] ,
     data: { type: Schema.Types.Mixed }
