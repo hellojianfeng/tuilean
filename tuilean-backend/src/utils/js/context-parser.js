@@ -341,7 +341,11 @@ module.exports = function (context,options={}, refresh=false) {
   };
 
   const getOperation = async ( operationData ) => {
-    return await getModel(operationData, operationService);
+    if(operationData.operation && typeof operationData.operation === 'string' && operationData.org){
+      operationData.path = operationData.operation;
+    }
+    if (operationData)
+      return await getModel(operationData, operationService);
   };
 
   const getOperations = async ( operationsData ) => {

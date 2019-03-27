@@ -16,36 +16,37 @@ module.exports = function(context, options) {
         oWorkflow.previous = oWorkflow.current;
       }
 
-      let actions = options && options.next && options.next.actions || options.actions || [];
-      const action = options && options.next && options.next.action || options.action;
+      let actions = options && options.current && options.current.actions || options.actions || [];
+      const action = options && options.current && options.current.action || options.action;
       if (action){
         actions.push(action);
       }
       const data = options && options.data;
       const status = options && options.status;
-      let next = { status, actions, data};
+      let current = {status, actions, data};
+      let next = options && options.next;
 
       if(status)
       {
         const filters = oWorkflow.works.filter( w => {
           return w.status === status;
         });
-        next = filters[0];
+        current = filters[0];
         if(data){
-          next.data = next && next.data ? Object.assign(next.data, data): data;
+          current.data = current && current.data ? Object.assign(current.data, data): data;
         }
-      } else if (next && next.status && next.actions){
-        await addWorkActions(oWorkflow,next);
+      } else if (current && current.status && current.actions){
+        await addWorkActions(oWorkflow,current);
       }
 
-      if(next){
-        oWorkflow.next = next;
-        oWorkflow.status = next.status;
+      if(current){
+        oWorkflow.current = current;
+        oWorkflow.status = current.status;
 
         const tasks = oWorkflow.tasks.filter( seq => { return seq.active === true; })[0];
         tasks.position += 1;
         if (tasks.status_sequence.length < tasks.position +1){
-          tasks.status_sequence.push(next.status);
+          tasks.status_sequence.push(current.status);
         }
 
         await workflowService.patch(
@@ -60,7 +61,7 @@ module.exports = function(context, options) {
           notify = false;
         }
 
-        const eventData = _.pick(oWorkflow,['_id','type','path','status','current','next','tasks']);
+        const eventData = _.pick(oWorkflow,['_id','type','path','status','current','tasks']);
         if (notify && notify.all){
           const eventId = 'workflow_'+ oWorkflow._id;
           context.service.emit(eventId, {data: eventData});
@@ -73,11 +74,11 @@ module.exports = function(context, options) {
           context.service.emit(eventId, {data: eventData});
         }
 
-        //by default, notify current work and next work
+        //by default, notify current work and previous work
         if (notify){
-          const current_event_id = 'workflow_'+ oWorkflow._id + '_work_' + oWorkflow.current._id;
+          const current_event_id = 'workflow_'+ oWorkflow._id + '_work_' + oWorkflow.previous._id;
           context.service.emit(current_event_id, {data: eventData});
-          const next_event_id = 'workflow_'+ oWorkflow._id + '_work_' +  + oWorkflow.next._id;
+          const next_event_id = 'workflow_'+ oWorkflow._id + '_work_' +  + oWorkflow.current._id;
           context.service.emit(next_event_id, {data: eventData});
         }
         return data;
@@ -268,7 +269,7 @@ module.exports = function(context, options) {
     if ( type && path && owner && tasks){
       const workflow = await workflowService.create(data);
       if (works){
-        await addWorks({workflow,works});
+        await registerWorks({workflow,works});
       }
       return workflow;
     }
@@ -319,7 +320,8 @@ module.exports = function(context, options) {
     if (workflow && workflow._id){
       const work = await findOrCreateWork({workflow,work: workData});
       if (work && work._id && workData.actions){
-        for ( const action of workData.actions){
+        for ( let a of workData.actions){
+          const action = await formatAction(a);
           if (action.users){
             for ( const u of action.users){
               const user = await contextParser.getUser(u);
@@ -350,28 +352,27 @@ module.exports = function(context, options) {
           }
           else if (action && action.operation)
           {
-            let operation = action.operation;
-            if (typeof action.operation === 'string'){
-              operation = { path: action.operation };
-            }
-            if ( action.org){
-              operation.org = action.org;
-            }
-            operation = await contextParser.getOperation(operation);
+            const operation = await contextParser.getOperation(action.operation);
             if (operation && operation._id){
               let isChanged = false, isNew = true;
-              operation.works.joined.filter( w => {
-                if (w._id.equals(work._id)){
-                  isNew = false;
-                  w.actions_hash = w.actions_hash || [];
-                  if(!w.actions_hash.includes(objectHash(action))){
-                    isChanged = true;
-                    w.action.push(action);
-                    w.actions_hash.push(objectHash(action));
+
+              if (operation.works && operation.works.joined){
+                operation.works.joined.filter( w => {
+                  if (w._id.equals(work._id)){
+                    isNew = false;
+                    w.actions_hash = w.actions_hash || [];
+                    if(!w.actions_hash.includes(objectHash(action))){
+                      isChanged = true;
+                      w.action.push(action);
+                      w.actions_hash.push(objectHash(action));
+                    }
                   }
-                }
-              });
+                });
+              }
+              
               if(isNew){
+                operation.works = operation.works || {};
+                operation.works.joined = operation.works.joined || [];
                 operation.works.joined.push({work: {_id: work._id, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
               }
               if (isChanged || isNew){
@@ -389,6 +390,8 @@ module.exports = function(context, options) {
     return { code: 302, error: 'fail to register work, please check input!'};
   };
 
+  const registerWork = registerWorkActions;
+
   const registerWorks = async options => {
     const works = options.works || options || [];
     const workflow = options.workflow;
@@ -403,8 +406,6 @@ module.exports = function(context, options) {
     return results;
 
   };
-
-  const addWorks = registerWorks;
 
   const addWorkActions = registerWorkActions;
 
@@ -582,8 +583,27 @@ module.exports = function(context, options) {
     }
   };
 
-  return {start, end, init, current, next, find, findOrCreate, addWorks,
+  const formatAction = async ( action ) => {
+    if ( action.user){
+      if (typeof action.user === 'object' && action.user.email){
+        action.user = action.user.email;
+      }
+    }
+
+    if (action.operation){
+      if (typeof action.operation === 'string' && action.org){
+        action.operation = { operation: action.operation, org: action.org};
+      }
+      const operation = await contextParser.getOperation(action.operation);
+      if (operation){
+        action.operation = _.pick(operation,['path', 'org_path']);
+      }
+    }
+    return _.pick(action,['name', 'path', 'operation','page','users', 'orgs','roles','permissions','data']);
+  };
+
+  return {start, end, init, current, next, find, findOrCreate, registerWorks, registerWork,
     getListens, getUserOrgWorkflows, getUserWorkflows,registerWorkActions,getWorksByAction,
-    matchAction, getWorkflow, matchNextAction, create, addWorkActions
+    matchAction, getWorkflow, matchNextAction, create, addWorkActions, formatAction
   };
 };
