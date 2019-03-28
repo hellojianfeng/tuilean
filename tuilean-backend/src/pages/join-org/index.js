@@ -27,9 +27,9 @@ module.exports = async function (context, options) {
 
   if (action === 'open'){
     const { user_orgs } = await contextParser.parse();
-    const user_workflows = await workflowHelper.getUserWorkflows({page: 'join-org'});
+    const works = await workflowHelper.getUserWorks({page: 'join-org'});
 
-    const result = { user_orgs, user_workflows};
+    const result = { user_orgs, works};
 
     return context.result = await buildResult.page(result);
   }

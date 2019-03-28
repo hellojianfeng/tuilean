@@ -418,76 +418,69 @@ module.exports = function(context, options) {
     };
   };
 
-  const getUserOrgWorkflows = async ( options ) => {
-    let user_operations = options && await contextParser.getOrgUserOperations(options);
-    if (options.operation){
-      const operation = await contextParser.getOperation(options.operation);
-      if (operation){
-        user_operations = user_operations.filter( uop => {
-          return uop._id.equals(operation._id);
-        });
-      }
-    }
-    const current_workflows = [];
-    const next_workflows = [];
-    user_operations.map ( async uop => {
-      uop.workflows.joined.map ( async wf => {
-        const workflow = await getWorkflow(wf);
-        wf.works.map( w => {
-          if (w.status === workflow.current.status){
-            current_workflows.push(workflow);
-          }
-          if (w.status === workflow.next.status){
-            next_workflows.push(workflow);
-          }
-        });
-      });
-    });
-    return { current_workflows, next_workflows};
-  };
-
-  const getUserWorkflows = async (options = {}) => {
+  const getUserWorks = async ( options = {}) => {
     const user = options && options.user && await contextParser.getUser(options.user) ||  context.params.user;
     const operation = options && options.operation && await contextParser.getOperation(options.operation);
 
     const org = options && options.org && await contextParser.getOrg(options.org);
+    const page = options && options.page;
 
-    const current_workflows = [];
-    const next_workflows = [];
+    const current_works = [];
+    const previous_works = [];
 
-    if (operation && operation.workflows && operation.workflows.joined){
-      operation.workflows.joined.map ( async wf => {
-        const workflow = await getWorkflow(wf);
-        current_workflows.push(workflow.current);
-        next_workflows.push(workflow.next);
-      });
+    const populateWork = async ( work ) => {
+      const j = work;
+      if ( j && j.work && j.workflow )
+      {
+        const workflow = await getWorkflow(j.workflow);
+        if (workflow && workflow.current && workflow.current.status && j.work.status === workflow.current.status){
+          current_works.push(_.pick(j,['work','workflow','actions']));
+        }
+        if (workflow && workflow.previous && workflow.previous.status && j.work.status === workflow.previous.status){
+          previous_works.push(_.pick(j,['work','workflow','actions']));
+        }
+      }
+    };
+
+    if (operation && operation.works && operation.works.joined){
+      for( const j of operation.works.joined ) {
+        await populateWork(j);
+      }
     }
 
-    if ( org) {
-      return getUserOrgWorkflows({org});
+    if (org && org.path){
+      const userOperations = await contextParser.getOrgUserOperations({org});
+      for (const uo of userOperations) {
+        if (uo && uo.works && uo.works.joined){
+          for (const j of uo.works.joined ) {
+            await populateWork(j);
+          }
+        }
+      }
     }
 
-    const userWorkflows = user.workflows && user.workflows.joined || [];
+    if (user && user.works && user.works.joined){
+      for (const j of user.works.joined) {
+        if (operation && operation.path && operation.org_path){
+          if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
+            await populateWork(j);
+          }
+        } else if (page){
+          if (_.some(j.actions, {page})){
+            await populateWork(j);
+          }
+        }
+        else if (org && org.path){
+          if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
+            await populateWork(j);
+          }
+        } else {
+          await populateWork(j);
+        }
+      }
+    }
 
-    const page = options.page;
-
-    userWorkflows.map ( async wf => {
-      const workflow = await getWorkflow(wf);
-      if (page && _.find(workflow.current.actions, a => { return a.page && a.page === page;})){
-        current_workflows.push(workflow);
-      }
-      if (page && _.find(workflow.next.actions, a => { return a.page && a.page === page;})){
-        next_workflows.push(workflow);
-      }
-      if (operation && _.find(workflow.current.actions, a => { return a.operation && a.operation._id && a.operation._id.equals(operation._id);})){
-        current_workflows.push(workflow);
-      }
-      if (operation && _.find(workflow.next.actions, a => { return a.operation && a.operation._id && a.operation._id.equals(operation._id);})){
-        next_workflows.push(workflow);
-      }
-    });
-
-    return {current_workflows, next_workflows};
+    return {current_works, previous_works};
   };
 
   const getWorksByAction = async ( options = {}) => {
@@ -528,18 +521,18 @@ module.exports = function(context, options) {
     }
 
     if ( typeof data === 'object'){
-      let query;
+      let query = {};
       if (data._id){
         query._id = data._id;
       }
       if (data.type && data.path){
-        query = _.pick(data, ['type','path','owner_hash']);
+        query = Object.assign(query,_.pick(data, ['type','path','owner_hash']));
       }
       if (data.owner){
         query.owner_hash = objectHash(data.owner);
       }
-      if (query){
-        const finds = await workflowService.find({query: data});
+      if (query && !_.isEmpty(query)){
+        const finds = await workflowService.find({query});
         if (finds && finds.total === 1){
           return finds.data[0];
         }
@@ -603,7 +596,7 @@ module.exports = function(context, options) {
   };
 
   return {start, end, init, current, next, find, findOrCreate, registerWorks, registerWork,
-    getListens, getUserOrgWorkflows, getUserWorkflows,registerWorkActions,getWorksByAction,
-    matchAction, getWorkflow, matchNextAction, create, addWorkActions, formatAction
+    getListens, registerWorkActions,getWorksByAction,
+    matchAction, getWorkflow, matchNextAction, create, addWorkActions, formatAction, getUserWorks
   };
 };
