@@ -8,6 +8,7 @@ module.exports = async function (context, options={}) {
   const action = context.data.action || 'open';
 
   const buildResult = require('../../utils/js/build-result')(context,options);
+  const workflowHelper = require('../../utils/js/workflow-helper')(context,options);
 
   //const mongooseClient = context.app.get('mongooseClient');
 
@@ -15,7 +16,9 @@ module.exports = async function (context, options={}) {
     const orgs = await userOrgFind(context,options);
     const orgList = Object.values(orgs);
 
-    context.result = await buildResult.page({ orgs: orgList });
+    const works = await workflowHelper.getUserWorks();
+
+    context.result = await buildResult.page({ orgs: orgList, works });
   }
 
   return context;

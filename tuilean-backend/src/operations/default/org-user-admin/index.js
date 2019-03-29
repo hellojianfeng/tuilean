@@ -17,14 +17,12 @@ module.exports = async function (context, options = {}) {
 
   //const { operation_org } = await contextParser.parse();
 
-  const workflow = context.data.data && context.data.data.workflow;
+  const current_work = context.data.data && context.data.data.current_work;
+  const current_operation = context.params.operation;
 
-  if (workflow){
-    if ( workflowHelper.matchNextAction({
-      workflow,action: { operation: { _id: context.params.operation._id }}})){
-      if (workflow.status === 'applying'){
-        action = 'process-join-org';
-      }
+  if (current_work){
+    if (_.some(current_work.actions, {operation:_.pick(current_operation,['path','org_path'])})){
+      action = 'process-join-org';
     }
   }
 
@@ -44,8 +42,8 @@ module.exports = async function (context, options = {}) {
       return o.path !== 'org-initialize';
     });
 
-    const user_workflows = await workflowHelper.getUserWorkflows({operation: context.params.operation});
-    result.user_workflows = user_workflows;
+    const works = await workflowHelper.getUserWorks({operation: context.params.operation});
+    result.works = works;
 
     context.result = await buildResult.operation(result);
 
@@ -193,15 +191,14 @@ module.exports = async function (context, options = {}) {
   }
 
   if (action === 'process-join-org'){
-    const wf_data = context.data.data.workflow || context.data.data;
+    const {process_result, current_work}= context.data.data;
+    const userData = context.data.data && context.data.data.user || current_work && current_work.work && current_work.work.data && current_work.work.data.user;
+    const orgData = context.data.data && context.data.data.org || current_work && current_work.work && current_work.work.data && current_work.work.data.org;
 
-    const workflow = await workflowHelper.getWorkflow(wf_data);
+    const user = await contextParser.getUser(userData);
+    const org = await contextParser.getOrg(orgData);
 
-    const next = workflow.next;
-
-    const processData = next.data;
-
-    if (next && next.status === 'applying' && processData && processData.org){
+    if (user && org){
       const configuration = operationHelper.getConfiguration();
       const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
       const { everyone_role } = await contextParser.parse();
@@ -209,59 +206,23 @@ module.exports = async function (context, options = {}) {
       if (allowJoinOrg === 'always'){
         // add user into org immediately
         userHelper.add_user_role(everyone_role);
-        await workflowHelper.next({workflow, status: 'processed', data: {'join-org-result': 'approved'}});
+        if(current_work){
+          await workflowHelper.next({workflow:current_work.workflow, status: 'processed', data: {'result': 'approved'}});
+        }
       }
 
       if (allowJoinOrg === 'need_approve'){
-        //
-        let processResult = context.data.data && context.data.data.process_result;
-        if (processResult){
-          if (typeof process_result === 'string'){
-            processResult = { value: processResult };
-          }
-          processResult.title = processResult.title || 'Process Result for Join-Org';
-          processResult.path = processResult.path || 'join-org-process-result';
-
-          if(['approved','rejected','processing'].includes(processResult.value)){
-            userHelper.add_user_role(everyone_role);
-            await workflowHelper.next({workflow, status: 'processed', data: {'join-org-result': processResult}});
+        if (process_result){
+          if(['approved','rejected','processing','approve','reject'].includes(process_result)){
+            await userHelper.add_user_role({role: everyone_role, user});
+            if(current_work){
+              await workflowHelper.next({workflow:current_work.workflow, status: 'processed', data: {'result': process_result}});
+            }
+            return context.result = await buildResult.operation({status: 'processed', data: {'result': process_result}});
           }
         }
       }
     }
-
-    //   let processResult = context.data.data && context.data.data.process_result || {};
-    //   const joinOrgRequest = context.data.data && context.data.data.join_org_request;
-    //   const configuration = operationHelper.getConfiguration();
-
-    //   const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
-
-    //   if (allowJoinOrg === 'always'){
-    //     // add user into org immediately
-    //     const { everyone_role } = await contextParser.parse();
-    //     userHelper.add_user_role(everyone_role);
-    //   }
-
-    //   if (allowJoinOrg === 'need_approve'){
-    //     //
-
-    //   }
-
-    //   if (processResult && joinOrgRequest){
-    //     if (typeof processResult === 'string'){
-    //       processResult = { value: processResult };
-    //     }
-    //     processResult.title = processResult.title || 'Join Org Process Result';
-    //     processResult.path = processResult.path || 'join-org-process-result';
-
-  //     if(['approved','rejected','processing'].includes(processResult.value)){
-  //       await notifyHelper.updateNotify({
-  //         notification: joinOrgRequest,
-  //         status: processResult
-  //       });
-  //     }
-  //   }
+    return context.result = await buildResult.operation({ code: 201, error:'not execute process-join-org, please check input!'  });
   }
-
-  return context;
 };

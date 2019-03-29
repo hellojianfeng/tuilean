@@ -434,10 +434,10 @@ module.exports = function(context, options) {
       {
         const workflow = await getWorkflow(j.workflow);
         if (workflow && workflow.current && workflow.current.status && j.work.status === workflow.current.status){
-          current_works.push(_.pick(j,['work','workflow','actions']));
+          current_works.push({work: workflow.current, workflow: j.workflow,actions: j.actions});
         }
         if (workflow && workflow.previous && workflow.previous.status && j.work.status === workflow.previous.status){
-          previous_works.push(_.pick(j,['work','workflow','actions']));
+          previous_works.push({work: workflow.previous, workflow: j.workflow,actions: j.actions});
         }
       }
     };

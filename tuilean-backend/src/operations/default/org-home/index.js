@@ -4,6 +4,7 @@ module.exports = async function (context, options = {}) {
   const contextParser = require('../../../utils/js/context-parser')(context,options);
   const operationStatus = require('../../../utils/js/operation-status')(context,options);
   const buildResult = require('../../../utils/js/build-result')(context,options);
+  const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
 
   //const operationData = context.data.data || {};
   const action = context.data.action || 'open';
@@ -36,7 +37,9 @@ module.exports = async function (context, options = {}) {
       });
     }
 
-    context.result = await buildResult.operation({operations: allOperations});
+    const works = await workflowHelper.getUserWorks({org:current_operation_org});
+
+    context.result = await buildResult.operation({operations: allOperations, works});
 
     return context;
   }
