@@ -5,11 +5,12 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const schemas = require('./schemas')(app);
-  const { workflow_work, workflow_action } = schemas;
+  const { workflow_work, workflow_action, progress } = schemas;
   const { Schema } = mongooseClient;
   const workSchema = new Schema({
     name: String,
     path: String,
+    progress: progress,
     status: { type: String, required: true},
     allow_actions: { type: Schema.Types.Mixed },
     data: { type: Schema.Types.Mixed}

@@ -117,6 +117,12 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
+  const progress = new Schema({
+    value: {type: Number, default: 0},
+    outof: {type: Number, default: 100},
+    data: { type: Schema.Types.Mixed }
+  });
+
   return {
     channel_obj: channelSchema,
     owner_channel: channelSchema,
@@ -128,5 +134,7 @@ module.exports = function (app) {
     compact_user,
     workflow_action,
     workflow_work,
-    user_scope  };
+    user_scope,
+    progress
+  };
 };

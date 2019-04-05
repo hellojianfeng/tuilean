@@ -8,6 +8,7 @@ module.exports = function(context, options) {
   const userService = context.app.service('users');
 
   const next = async (options = {}) => {
+    const results = [];
     const oWorkflow = options && options.workflow && await getWorkflow(options.workflow);
     if (oWorkflow){
       const history = oWorkflow.history;
@@ -16,73 +17,106 @@ module.exports = function(context, options) {
         oWorkflow.previous = oWorkflow.current;
       }
 
-      let actions = options && options.current && options.current.actions || options.actions || [];
-      const action = options && options.current && options.current.action || options.action;
-      if (action){
-        actions.push(action);
-      }
-      const data = options && options.data;
-      const status = options && options.status;
-      let current = {status, actions, data};
-      let next = options && options.next;
+      const currentData = options && options.current;
+      const nextData = options && options.next;
+      const taskPath = options && options.task;
 
-      if(status)
-      {
-        const filters = oWorkflow.works.filter( w => {
-          return w.status === status;
-        });
-        current = filters[0];
-        if(data){
-          current.data = current && current.data ? Object.assign(current.data, data): data;
+      currentData.actions = options && options.current && options.current.actions || [];
+      if (currentData && currentData.action){
+        currentData.actions.push(currentData.action);
+      }
+
+      let current = await findOrCreateWork({work: currentData});
+      let next = nextData && await findOrCreateWork({work: nextData});
+
+      if (!next){
+        if (oWorkflow && oWorkflow.tasks){
+          const task = oWorkflow.tasks.filter( t => {
+            return taskPath && taskPath === t.path || t.active === true;
+          });
+          if (task && task.status_sequence && task.position){
+            task.position += 1;
+            const nextStatus = task.status_sequence[task.position];
+            next = oWorkflow.works.filter( w => {
+              return w.status === nextStatus;
+            });
+          }
         }
-      } else if (current && current.status && current.actions){
-        await addWorkActions(oWorkflow,current);
       }
 
       if(current){
-        oWorkflow.current = current;
-        oWorkflow.status = current.status;
-
-        const tasks = oWorkflow.tasks.filter( seq => { return seq.active === true; })[0];
-        tasks.position += 1;
-        if (tasks.status_sequence.length < tasks.position +1){
-          tasks.status_sequence.push(current.status);
+        if (current.progress){
+          const incremental = currentData.progress && currentData.progress.incremental || 1;
+          if (current.progress && current.progress.value){
+            current.progress.value += incremental;
+            await workflowService.patch(
+              oWorkflow._id,
+              {
+                current
+              }
+            );
+            results.push({message: 'increase progress successfully!', progress: { value: current.progress.value, outof: current.progress.outof}});
+            return results;
+          }
         }
+        if(next){
+          let allowNext = true;
+          if(current.progress && current.progress.value && current.progress.outof){
+            if (current.progress.value < current.progress.outof){
+              allowNext = false;
+            }
+          }
 
-        await workflowService.patch(
-          oWorkflow._id,
-          {
-            history,previous:oWorkflow.previous, current:oWorkflow.current, next, status, tasks,data
-          });
-        //by default create a notify for workflow.next action
-        let notify = true;
+          if(allowNext && oWorkflow){
+            next.data = nextData && nextData.data;
+            oWorkflow.previous = current;
+            oWorkflow.current = next;
+            if(oWorkflow.history){
+              oWorkflow.history.push(oWorkflow.current);
+            }
 
-        if (options && options.notify === false){
-          notify = false;
+            await workflowService.patch(
+              oWorkflow._id,
+              {
+                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current, tasks
+              }
+            );
+            //by default create a notify for workflow.next action
+            let notify = true;
+    
+            if (options && options.notify === false){
+              notify = false;
+            }
+    
+            const eventData = _.pick(oWorkflow,['_id','type','path','status','current','tasks']);
+            if (notify && notify.all){
+              const eventId = 'workflow_'+ oWorkflow._id;
+              context.service.emit(eventId, {data: eventData});
+              const owner_eventId = 'workflow_'+ oWorkflow._id + '_owner_' + oWorkflow.owner._id;
+              context.service.emit(owner_eventId, {data: eventData});
+            }
+    
+            if (notify && notify.owner){
+              const eventId = 'workflow_'+ oWorkflow._id + '_owner_' + oWorkflow.owner._id;
+              context.service.emit(eventId, {data: eventData});
+            }
+    
+            //by default, notify current work and previous work
+            if (notify){
+              const current_event_id = 'workflow_'+ oWorkflow._id + '_work_' + oWorkflow.previous._id;
+              context.service.emit(current_event_id, {data: eventData});
+              const next_event_id = 'workflow_'+ oWorkflow._id + '_work_' +  + oWorkflow.current._id;
+              context.service.emit(next_event_id, {data: eventData});
+            }
+            results.push({message:'move to next work successfully!', result: {workflow: oWorkflow}});
+          }
+        } else {
+          results.push({ code: 101, error: 'no valid next work to find!'});
         }
-
-        const eventData = _.pick(oWorkflow,['_id','type','path','status','current','tasks']);
-        if (notify && notify.all){
-          const eventId = 'workflow_'+ oWorkflow._id;
-          context.service.emit(eventId, {data: eventData});
-          const owner_eventId = 'workflow_'+ oWorkflow._id + '_owner_' + oWorkflow.owner._id;
-          context.service.emit(owner_eventId, {data: eventData});
-        }
-
-        if (notify && notify.owner){
-          const eventId = 'workflow_'+ oWorkflow._id + '_owner_' + oWorkflow.owner._id;
-          context.service.emit(eventId, {data: eventData});
-        }
-
-        //by default, notify current work and previous work
-        if (notify){
-          const current_event_id = 'workflow_'+ oWorkflow._id + '_work_' + oWorkflow.previous._id;
-          context.service.emit(current_event_id, {data: eventData});
-          const next_event_id = 'workflow_'+ oWorkflow._id + '_work_' +  + oWorkflow.current._id;
-          context.service.emit(next_event_id, {data: eventData});
-        }
-        return data;
+      } else {
+        results.push({code: 100, error: 'no valid current work to find!'});
       }
+      return results;
     }
   };
 
