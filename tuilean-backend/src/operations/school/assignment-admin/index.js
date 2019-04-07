@@ -48,7 +48,7 @@ module.exports = async function (context, options = {}) {
               name: 'select student',
               key: 'select student'
             },
-            { 
+            {
               name: 'select users',
               key: 'select_users'
             },
@@ -101,14 +101,14 @@ module.exports = async function (context, options = {}) {
 
   if (action === 'create-confirm'){
     const assignment_data = context.data.data.assignment_data;
-    
+
     context.result = await buildResult.operation({assignment_data});
   }
 
   if (action === 'create-end'){
 
     const assignment_data = context.data.data.assignment_data;
-    
+
     const workflows = [];
     if(assignment_data && assignment_data.assign_to){
       const assign_to = assignment_data.assign_to;
@@ -134,16 +134,16 @@ module.exports = async function (context, options = {}) {
                 }
                 const by = workData.actions.by;
                 if (by && Array.isArray(by)){
-                  
+
                   for(const item of by){
                     if (item === 'assigned_user'){
-                      actions.push({action: actionName, operation, users: [student.email]});
+                      actions.push({path: actionName, operation, users: [student.email]});
                       const work = _.pick(workData,['name','description','status']);
                       work.actions = actions;
                       await workflowHelper.addWorkActions({workflow,work});
                     }
                     if(validateEmail(item)){
-                      actions.push({action: actionName, operation, users: [item]});
+                      actions.push({path: actionName, operation, users: [item]});
                       const work = _.pick(workData,['name','description','status']);
                       work.actions = actions;
                       await workflowHelper.addWorkActions({workflow,work});
@@ -152,7 +152,7 @@ module.exports = async function (context, options = {}) {
                       const parents = contextParser.getOrgUsers({role: 'parent', data: { child: student }});
                       if(parents){
                         for(const parent of parents){
-                          actions.push({action: actionName, operation, users: [parent.email]});
+                          actions.push({path: actionName, operation, users: [parent.email]});
                           const work = _.pick(workData,['name','description','status']);
                           work.actions = actions;
                           await workflowHelper.addWorkActions({workflow,work});

@@ -83,11 +83,11 @@ module.exports = function(context, options) {
             );
             //by default create a notify for workflow.next action
             let notify = true;
-    
+
             if (options && options.notify === false){
               notify = false;
             }
-    
+
             const eventData = _.pick(oWorkflow,['_id','type','path','status','current','tasks']);
             if (notify && notify.all){
               const eventId = 'workflow_'+ oWorkflow._id;
@@ -95,12 +95,12 @@ module.exports = function(context, options) {
               const owner_eventId = 'workflow_'+ oWorkflow._id + '_owner_' + oWorkflow.owner._id;
               context.service.emit(owner_eventId, {data: eventData});
             }
-    
+
             if (notify && notify.owner){
               const eventId = 'workflow_'+ oWorkflow._id + '_owner_' + oWorkflow.owner._id;
               context.service.emit(eventId, {data: eventData});
             }
-    
+
             //by default, notify current work and previous work
             if (notify){
               const current_event_id = 'workflow_'+ oWorkflow._id + '_work_' + oWorkflow.previous._id;
@@ -403,7 +403,7 @@ module.exports = function(context, options) {
                   }
                 });
               }
-              
+
               if(isNew){
                 operation.works = operation.works || {};
                 operation.works.joined = operation.works.joined || [];
@@ -458,14 +458,23 @@ module.exports = function(context, options) {
 
     const org = options && options.org && await contextParser.getOrg(options.org);
     const page = options && options.page;
+    const workflow_type = options && options.workflow_type;
+    const workflow_path = options && options.workflow_path;
 
     const current_works = [];
     const previous_works = [];
 
-    const populateWork = async ( work ) => {
+    const populateWork = async ( work, options ) => {
+      const { workflow_type, workflow_path } = options;
       const j = work;
       if ( j && j.work && j.workflow )
       {
+        if(workflow_type && workflow_type !== j.workflow.type){
+          return;
+        }
+        if(workflow_path && workflow_path !== j.workflow.path){
+          return;
+        }
         const workflow = await getWorkflow(j.workflow);
         if (workflow && workflow.current && workflow.current.status && j.work.status === workflow.current.status){
           current_works.push({work: workflow.current, workflow: j.workflow,actions: j.actions});
@@ -478,7 +487,7 @@ module.exports = function(context, options) {
 
     if (operation && operation.works && operation.works.joined){
       for( const j of operation.works.joined ) {
-        await populateWork(j);
+        await populateWork(j,{workflow_path, workflow_type});
       }
     }
 
@@ -487,7 +496,7 @@ module.exports = function(context, options) {
       for (const uo of userOperations) {
         if (uo && uo.works && uo.works.joined){
           for (const j of uo.works.joined ) {
-            await populateWork(j);
+            await populateWork(j,{workflow_path, workflow_type});
           }
         }
       }
@@ -497,19 +506,19 @@ module.exports = function(context, options) {
       for (const j of user.works.joined) {
         if (operation && operation.path && operation.org_path){
           if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
-            await populateWork(j);
+            await populateWork(j,{workflow_path, workflow_type});
           }
         } else if (page){
           if (_.some(j.actions, {page})){
-            await populateWork(j);
+            await populateWork(j,{workflow_path, workflow_type});
           }
         }
         else if (org && org.path){
           if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
-            await populateWork(j);
+            await populateWork(j,{workflow_path, workflow_type});
           }
         } else {
-          await populateWork(j);
+          await populateWork(j,{workflow_path, workflow_type});
         }
       }
     }
