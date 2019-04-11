@@ -156,32 +156,21 @@
           },
           {
             "path":"student"
+          },
+          {
+            "path":"parent"
           }
         ],
         "operations":[
           {
-            "path":"class-assignment-admin",
+            "path":"assignment-admin",
             "app":"school",
             "roles":["teacher"]
           },
           {
-            "path":"class-assignment-do",
+            "path":"assignment-home",
             "app":"school",
-            "roles":["student"]
-          }
-        ],
-        "permissions":[
-          {
-            "path":"class-assignment-monitor"
-          }
-        ]
-      },
-      "school.class.primary":{
-        "roles": [
-          {
-            "path":"parent",
-            "operations":["class-assignment-do"],
-            "permissions":["class-assignment-monitor"]
+            "roles":["student","parent","teacher"]
           }
         ]
       }

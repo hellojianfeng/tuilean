@@ -36,15 +36,11 @@ module.exports = async function (context, options = {}) {
   }
 
   if (action === 'update-assignment'){
-
-  }
-
-  if (action === 'confirm-assignment'){
-
+    context.result = await buildResult.operation({current_work});
   }
 
   if(action === 'watch-assignment'){
-
+    context.result = await buildResult.operation({current_work});
   }
 
   return context;

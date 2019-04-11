@@ -77,7 +77,7 @@ module.exports = async function (context, options) {
 
       if (workflow){
         await workflowHelper.start({workflow});
-        return await workflowHelper.next({workflow,status:'applying', data:{ user: user.email, org }});
+        return await workflowHelper.next({workflow,next: {status:'applying', data:{ user: user.email, org }}});
       }
     }
 

@@ -69,7 +69,7 @@ const orgInitialize = async function (context, options = {}) {
     const postAddPermissionOperations = {};
     const postAddRolePermissions = {};
     let newOperations = [];
-    let runOperations = runData.operations;
+    let runOperations = runData.operations || [];
     if(runOperations && !Array.isArray(runOperations) && typeof runOperations === 'object'){
       runOperations = Object.values(runOperations).map( o => { return o;});
     }
@@ -118,7 +118,7 @@ const orgInitialize = async function (context, options = {}) {
 
     //add permissions
     let newPermissions = [];
-    let runPermissions = runData.permissions;
+    let runPermissions = runData.permissions || [];
     if( runPermissions && typeof runPermissions === 'object' && !Array.isArray(runPermissions)){
       runPermissions = Object.values(runPermissions).map( o => { return o; });
     }
@@ -167,7 +167,7 @@ const orgInitialize = async function (context, options = {}) {
     
 
     //add org roles
-    let newRoles = [], runRoles = runData.roles;
+    let newRoles = [], runRoles = runData.roles || [];
     if(runData.roles && !Array.isArray(runData.roles) && typeof runData.roles === 'object'){
       runRoles = Object.values(runData.roles).map( o => { return o; });
     }

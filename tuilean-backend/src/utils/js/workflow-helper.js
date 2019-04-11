@@ -18,16 +18,11 @@ module.exports = function(context, options) {
       }
 
       const currentData = options && options.current;
-      const nextData = options && options.next;
+      const nextData = options && options.next || options;
       const taskPath = options && options.task;
 
-      currentData.actions = options && options.current && options.current.actions || [];
-      if (currentData && currentData.action){
-        currentData.actions.push(currentData.action);
-      }
-
-      let current = await findOrCreateWork({work: currentData});
-      let next = nextData && await findOrCreateWork({work: nextData});
+      let current = oWorkflow.current;
+      let next = nextData && await findOrCreateWork({workflow: oWorkflow, work: nextData});
 
       if (!next){
         if (oWorkflow && oWorkflow.tasks){
@@ -78,7 +73,7 @@ module.exports = function(context, options) {
             await workflowService.patch(
               oWorkflow._id,
               {
-                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current, tasks
+                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current, tasks: oWorkflow.tasks
               }
             );
             //by default create a notify for workflow.next action
@@ -145,7 +140,7 @@ module.exports = function(context, options) {
       oCurrent = oWorkflow.works.filter( w => {
         return w.status === status;
       })[0];
-      //if no start status, add it
+      //if no current status, add it
       if(!oCurrent && actions.length > 0){
         oCurrent = await addWorkActions({workflow: oWorkflow, work: {status, actions}});
       }
@@ -514,7 +509,7 @@ module.exports = function(context, options) {
           }
         }
         else if (org && org.path){
-          if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
+          if (_.some(j.actions, {operation:{org_path: org.path}})){
             await populateWork(j,{workflow_path, workflow_type});
           }
         } else {
