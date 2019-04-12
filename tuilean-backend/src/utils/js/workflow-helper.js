@@ -294,16 +294,18 @@ module.exports = function(context, options) {
   };
 
   const create = async data => {
-    const { type, path, owner, works, tasks } = data;
-    if ( type && path && owner && tasks){
+    const { type, path, owner, works } = data;
+    if ( type && path && owner){
       const workflow = await workflowService.create(data);
       if (works){
         await registerWorks({workflow,works});
       }
       return workflow;
     }
-    return { code: 201, error:'fail to create workflow, please make sure type|path|owner|sequance|works is ready!'};
+    return { code: 201, error:'fail to create workflow, please make sure type|path|owner|works is ready!'};
   };
+
+  const findOrCreateWorkflow = findOrCreate;
 
   const findOrCreateWork= async data => {
     let workData = data.work || data;
@@ -633,7 +635,7 @@ module.exports = function(context, options) {
     return _.pick(action,['name', 'path', 'operation','page','users', 'orgs','roles','permissions','data']);
   };
 
-  return {start, end, init, current, next, find, findOrCreate, registerWorks, registerWork,
+  return {start, end, init, current, next, find, findOrCreate, findOrCreateWorkflow,registerWorks, registerWork,
     getListens, registerWorkActions,getWorksByAction,
     matchAction, getWorkflow, matchNextAction, create, addWorkActions, formatAction, getUserWorks
   };

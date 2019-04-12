@@ -10,6 +10,7 @@ module.exports = async function (context, options = {}) {
   const buildResult = require('../../../utils/js/build-result')(context,options);
   const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
   //const userHelper = require('../../../utils/js/user-helper')(context,options);
+  const orgHelper = require('../../../utils/js/org-helper')(context,options);
 
   const _ = require('lodash');
 
@@ -27,7 +28,7 @@ module.exports = async function (context, options = {}) {
   /**
    * first provide unique path and type
    */
-  if (action === 'create-start'){
+  if (action === 'create-assignment-start'){
     const assignment_data = {
       name: 'give a name, option',
       path: 'give path, option',
@@ -99,70 +100,53 @@ module.exports = async function (context, options = {}) {
     context.result = await buildResult.operation({assignment_data});
   }
 
-  if (action === 'create-confirm'){
+  if (action === 'create-assignment-confirm'){
     const assignment_data = context.data.data.assignment_data;
 
     context.result = await buildResult.operation({assignment_data});
   }
 
-  if (action === 'create-end'){
+  if (action === 'create-assignment-end'){
 
     const assignment_data = context.data.data.assignment_data;
 
     const workflows = [];
     if(assignment_data && assignment_data.assign_to){
       const assign_to = assignment_data.assign_to;
-      if(assign_to && assign_to.key && assign_to.key === 'every_student'){
+      if(assign_to && assign_to.key && assign_to.key === 'every_student' || assign_to === 'every_student'){
         const workflowData = _.pick(assignment_data,['name','description']);
         workflowData.type = assignment_data.type;
-        const students = await contextParser.getOrgUsers({role:'student'});
+        const students = await orgHelper.findOrgUsers({role:'student'});
         for(const student of students){
           const workflowData = _.pick(assignment_data,['name','description']);
-          workflowData.type = assignment_data.type;
+          workflowData.type = 'class-assignment';
           workflowData.path = 'assign_to_'+student._id;
           workflowData.owner = { operation: {path: 'assigment-admin',org_path: current_org.path}, users: [ user.email ]};
           workflowData.data = {assignment_data};
           const workflow = await workflowHelper.findOrCreate(workflowData);
           if(workflow && assignment_data.works){
             for(const workData of assignment_data.works){
-              if (workData && workData.actions){
-                const actions = [];
-                const actionName = workData.actions.action;
-                let operation;
-                if (['update','monitor','confirm'].includes(actionName)){
-                  operation = {path: 'assignment-home',org_path: context.params.operation.org_path};
-                }
-                const by = workData.actions.by;
-                if (by && Array.isArray(by)){
-
-                  for(const item of by){
-                    if (item === 'assigned_user'){
-                      actions.push({path: actionName, operation, users: [student.email]});
-                      const work = _.pick(workData,['name','description','status']);
-                      work.actions = actions;
-                      await workflowHelper.addWorkActions({workflow,work});
+              if (workData && workData.actions){       
+                for(const action of workData.actions){
+                  if(action.users){
+                    if (typeof action.users === 'string'){
+                      action.users = [action.users];
                     }
-                    if(validateEmail(item)){
-                      actions.push({path: actionName, operation, users: [item]});
-                      const work = _.pick(workData,['name','description','status']);
-                      work.actions = actions;
-                      await workflowHelper.addWorkActions({workflow,work});
-                    }
-                    if(item === 'student_parent'){
-                      const parents = contextParser.getOrgUsers({role: 'parent', data: { child: student }});
-                      if(parents){
-                        for(const parent of parents){
-                          actions.push({path: actionName, operation, users: [parent.email]});
-                          const work = _.pick(workData,['name','description','status']);
-                          work.actions = actions;
-                          await workflowHelper.addWorkActions({workflow,work});
-                        }
+                    action.users = action.users.map ( u => {
+                      if (u === 'assigned_user'){
+                        return student.email;
                       }
-                    }
+                      if (u === 'student_parent'){
+                        // todo: find student parent and add to action.users
+                      }
+                      if(validateEmail(u)){
+                        return u;
+                      }
+                    });
                   }
+                  await workflowHelper.addWorkActions({workflow,work: {status: workData.status, actions: [action]}});
                 }
               }
-              workflows.push(workflow);
             }
           }
         }
@@ -171,9 +155,6 @@ module.exports = async function (context, options = {}) {
 
     context.result = await buildResult.operation({workflows});
   }
-
-
-
   return context;
 };
 

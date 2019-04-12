@@ -498,6 +498,10 @@ module.exports = function (context,options={}, refresh=false) {
 
     const operationOrg = await getCurrentOperationOrg();
     const orgPath = options.org && options.org.path || operationOrg && operationOrg.path;
+    const roles = options.roles || [];
+    if (options.role){
+      roles.push(role);
+    }
 
     const finds = await userService.find({query: { $or: [
       {'roles.org_path': orgPath},
@@ -506,11 +510,15 @@ module.exports = function (context,options={}, refresh=false) {
     ]}});
 
     //only return roles in org for users
-    return finds.data.map ( u => {
+    return finds.data.filter ( u => {
       u.roles = u.roles.filter ( r => {
-        return r.org_path === orgPath;
+        if (r.org_path === orgPath){
+          if (roles.length === 0 || roles.includes(r.path)){
+            return true;
+          }
+        }
       });
-      return u;
+      return u.roles.length > 0;
     });
   };
 
