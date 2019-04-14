@@ -373,7 +373,7 @@ module.exports = function(context, options) {
                 });
                 if(isNewWork){
                   //user.works.joined.push({work: {_id: work._id, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions_hash: [objectHash(action)] });
-                  user.works.joined.push({work: {_id: work._id, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
+                  user.works.joined.push({work: {_id: work._id, path: work.path, type: work.type, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
                 }
                 if(isNewWork || isChanged){
                   results.push({ result: await userService.patch(user._id, {works: user.works}), work});
@@ -404,7 +404,7 @@ module.exports = function(context, options) {
               if(isNew){
                 operation.works = operation.works || {};
                 operation.works.joined = operation.works.joined || [];
-                operation.works.joined.push({work: {_id: work._id, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
+                operation.works.joined.push({work: {_id: work._id, type: work.type, path: work.path, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
               }
               if (isChanged || isNew){
                 results.push({

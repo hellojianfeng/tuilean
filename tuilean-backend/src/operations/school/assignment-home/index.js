@@ -1,4 +1,5 @@
 //const validateEmail = require('../../../utils/tools/validate-email');
+const _ = require('lodash');
 module.exports = async function (context, options = {}) {
 
   //const operationData = context.data.data || {};
@@ -15,7 +16,7 @@ module.exports = async function (context, options = {}) {
   //const _ = require('lodash');
   const current_work = context.data.data.current_work;
 
-  if(current_work && current_work.started){
+  if(current_work && current_work.actions){
     const actions = current_work.actions;
     actions.map ( a => {
       if (a.path === 'monitor'){
@@ -24,18 +25,23 @@ module.exports = async function (context, options = {}) {
       if (a.path === 'confirm'){
         action = 'confirm-assignment';
       }
-      if (a.path === 'update'){
+      if (['update','start'].includes(a.path)){
         action = 'update-assignment';
       }
     });
   }
 
   if (action === 'open'){
-    const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'assignment'});
+    const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
     context.result = await buildResult.operation({assignment_works});
   }
 
   if (action === 'update-assignment'){
+    if(current_work && current_work.work && current_work.work.status && current_work.actions){
+      if (current_work.work.status === 'start' && _.some(current_work.actions, {path: 'start'})){
+        await workflowHelper.next({workflow: current_work.workflow,next: { status: 'assigned'}});
+      }
+    }
     context.result = await buildResult.operation({current_work});
   }
 

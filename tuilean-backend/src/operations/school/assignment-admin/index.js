@@ -108,7 +108,7 @@ module.exports = async function (context, options = {}) {
 
   if (action === 'create-assignment-end'){
 
-    const assignment_data = context.data.data.assignment_data;
+    const assignment_data = context.data.data.assignment_data || context.data.data.assignment;
 
     const workflows = [];
     if(assignment_data && assignment_data.assign_to){
@@ -123,10 +123,10 @@ module.exports = async function (context, options = {}) {
           workflowData.path = 'assign_to_'+student._id;
           workflowData.owner = { operation: {path: 'assigment-admin',org_path: current_org.path}, users: [ user.email ]};
           workflowData.data = {assignment_data};
-          const workflow = await workflowHelper.findOrCreate(workflowData);
+          const workflow = await workflowHelper.findOrCreateWorkflow(workflowData);
           if(workflow && assignment_data.works){
             for(const workData of assignment_data.works){
-              if (workData && workData.actions){       
+              if (workData && workData.actions){
                 for(const action of workData.actions){
                   if(action.users){
                     if (typeof action.users === 'string'){
@@ -149,6 +149,7 @@ module.exports = async function (context, options = {}) {
               }
             }
           }
+          await workflowHelper.start({workflow});
         }
       }
     }
