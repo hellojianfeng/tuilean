@@ -6,6 +6,7 @@ module.exports = function(context, options) {
   const workflowService = context.app.service('workflows');
   const operationService = context.app.service('operations');
   const userService = context.app.service('users');
+  const workActionService = context.app.service('work-action');
 
   const next = async (options = {}) => {
     const results = [];
@@ -356,28 +357,18 @@ module.exports = function(context, options) {
           if (action.users){
             for ( const u of action.users){
               const user = await contextParser.getUser(u);
-              if (user && user.works && user.works.joined){
-                let isNewWork = true;
-                let isChanged = false;
-                user.works.joined.map( async w => {
-                  if (w._id.equals(work._id)){
-                    isNewWork = false;
-                    //if not find work in user, add it
-                    work.actions_hash = work.actions_hash || [];
-                    if (!work.actions_hash.includes(objectHash(action))){
-                      work.actions.push(action);
-                      work.actions_hash.push(objectHash(action));
-                      isChanged = true;
-                    }
-                  }
-                });
-                if(isNewWork){
-                  //user.works.joined.push({work: {_id: work._id, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions_hash: [objectHash(action)] });
-                  user.works.joined.push({work: {_id: work._id, path: work.path, type: work.type, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
-                }
-                if(isNewWork || isChanged){
-                  results.push({ result: await userService.patch(user._id, {works: user.works}), work});
-                }
+              const finds = await workActionService.find({query: {
+                'workflow._id': workflow._id,
+                'work._id': work._id,
+                'work.status': work.status,
+                'action.path': action.path,
+                user_id: user._id
+              }});
+              if(finds && finds.total && finds.total < 1){
+                const createdAction = await workActionService.create({workflow,work,action,user_id: user._id, status: 'joined'});
+                results.push({createdUserAction: createdAction});
+              } else {
+                results.push({findUserAction: finds.data[0]});
               }
             }
           }
@@ -385,32 +376,18 @@ module.exports = function(context, options) {
           {
             const operation = await contextParser.getOperation(action.operation);
             if (operation && operation._id){
-              let isChanged = false, isNew = true;
-
-              if (operation.works && operation.works.joined){
-                operation.works.joined.filter( w => {
-                  if (w._id.equals(work._id)){
-                    isNew = false;
-                    w.actions_hash = w.actions_hash || [];
-                    if(!w.actions_hash.includes(objectHash(action))){
-                      isChanged = true;
-                      w.action.push(action);
-                      w.actions_hash.push(objectHash(action));
-                    }
-                  }
-                });
-              }
-
-              if(isNew){
-                operation.works = operation.works || {};
-                operation.works.joined = operation.works.joined || [];
-                operation.works.joined.push({work: {_id: work._id, type: work.type, path: work.path, status: work.status}, workflow: {_id: workflow._id, type: workflow.type, path: workflow.path}, actions: [action], actions_hash: [objectHash(action)] });
-              }
-              if (isChanged || isNew){
-                results.push({
-                  result: await operationService.patch(operation._id, {works: operation.works}),
-                  work
-                });
+              const finds = await workActionService.find({query: {
+                'workflow._id': workflow._id,
+                'work._id': work._id,
+                'work.status': work.status,
+                'action.path': action.path,
+                operation_id: operation._id
+              }});
+              if(finds && finds.total && finds.total < 1){
+                const createdAction = await workActionService.create({workflow,work,action,operation_id: operation._id, status: 'joined'});
+                results.push({createdOperationAction: createdAction});
+              } else {
+                results.push({findOpeerationAction: finds.data[0]});
               }
             }
           }
@@ -483,24 +460,26 @@ module.exports = function(context, options) {
     };
 
     if (operation && operation.works && operation.works.joined){
-      for( const j of operation.works.joined ) {
+      const finds = await workActionService.find({query: {operation_id: operation._id, status: 'joined'}});
+      for( const j of finds.data ) {
         await populateWork(j,{workflow_path, workflow_type});
       }
     }
 
     if (org && org.path){
       const userOperations = await contextParser.getOrgUserOperations({org});
-      for (const uo of userOperations) {
-        if (uo && uo.works && uo.works.joined){
-          for (const j of uo.works.joined ) {
-            await populateWork(j,{workflow_path, workflow_type});
-          }
-        }
+      const idList = userOperations.map( uo => {
+        return uo._id;
+      });
+      const finds = await workActionService.find({query: {operation_id: {$in: idList}, status: 'joined'}});
+      for( const j of finds.data ) {
+        await populateWork(j,{workflow_path, workflow_type});
       }
     }
 
-    if (user && user.works && user.works.joined){
-      for (const j of user.works.joined) {
+    if (user){
+      const finds = await workActionService.find({query: {user_id: user._id, status: 'joined'}});
+      for (const j of finds.data) {
         if (operation && operation.path && operation.org_path){
           if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
             await populateWork(j,{workflow_path, workflow_type});
