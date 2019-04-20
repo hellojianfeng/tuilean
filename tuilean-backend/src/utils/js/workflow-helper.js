@@ -364,8 +364,16 @@ module.exports = function(context, options) {
                 'action.path': action.path,
                 user_id: user._id
               }});
-              if(finds && finds.total && finds.total < 1){
-                const createdAction = await workActionService.create({workflow,work,action,user_id: user._id, status: 'joined'});
+              if(finds && finds.total < 1){
+                const createdAction = await workActionService.create(
+                  {
+                    workflow: _.pick(workflow, ['_id','type','path']),
+                    work: _.pick(work, ['_id','path','status']),
+                    action: action && _.pick(action,['path','status','progress']),
+                    user_id: user._id,
+                    page: action.page,
+                    status: 'joined'
+                  });
                 results.push({createdUserAction: createdAction});
               } else {
                 results.push({findUserAction: finds.data[0]});
@@ -376,15 +384,25 @@ module.exports = function(context, options) {
           {
             const operation = await contextParser.getOperation(action.operation);
             if (operation && operation._id){
-              const finds = await workActionService.find({query: {
+              const query = {
                 'workflow._id': workflow._id,
                 'work._id': work._id,
                 'work.status': work.status,
-                'action.path': action.path,
                 operation_id: operation._id
-              }});
-              if(finds && finds.total && finds.total < 1){
-                const createdAction = await workActionService.create({workflow,work,action,operation_id: operation._id, status: 'joined'});
+              };
+              if (action.path){
+                query['action.path'] = action.path;
+              }
+              const finds = await workActionService.find({query});
+              if(finds && finds.total === 0){
+                const createdAction = await workActionService.create(
+                  {
+                    workflow: _.pick(workflow, ['_id','type','path']),
+                    work: _.pick(work, ['_id','path','status']),
+                    action: action && _.pick(action,['path','status','progress']),
+                    operation_id: operation._id,
+                    status: 'joined'
+                  });
                 results.push({createdOperationAction: createdAction});
               } else {
                 results.push({findOpeerationAction: finds.data[0]});
@@ -449,12 +467,31 @@ module.exports = function(context, options) {
         if(workflow_path && workflow_path !== j.workflow.path){
           return;
         }
+
+        const operation = j.operation_id && await operationService.get(j.operation_id);
+        const user = j.user_id && await userService.get(j.user_id);
+
         const workflow = await getWorkflow(j.workflow);
+        const theWork = { workflow: j.workflow, status: j.status};
+        if(operation){
+          theWork.operation = _.pick(operation,['_id','path','org_path']);
+        }
+        if(user){
+          theWork.user = _.pick(user,['_id','email']);
+        }
+        if(j.page){
+          theWork.page = j.page;
+        }
+        if (j.action){
+          theWork.action = j.action;
+        }
         if (workflow && workflow.current && workflow.current.status && j.work.status === workflow.current.status){
-          current_works.push({work: workflow.current, workflow: j.workflow,actions: j.actions});
+          theWork.work = workflow.current;
+          current_works.push(theWork);
         }
         if (workflow && workflow.previous && workflow.previous.status && j.work.status === workflow.previous.status){
-          previous_works.push({work: workflow.previous, workflow: j.workflow,actions: j.actions});
+          theWork.work = workflow.previous;
+          previous_works.push(theWork);
         }
       }
     };

@@ -21,8 +21,10 @@ module.exports = async function (context, options = {}) {
   const current_operation = context.params.operation;
 
   if (current_work){
-    if (_.some(current_work.actions, {operation:_.pick(current_operation,['path','org_path'])})){
-      action = 'process-join-org';
+    if(current_work.operation && current_operation._id.equals(current_work.operation._id)){
+      if(current_work.work.status === 'applying' ){
+        action = 'process-join-org';
+      }
     }
   }
 

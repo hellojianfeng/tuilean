@@ -135,6 +135,8 @@ module.exports = function (app) {
     workflow_action,
     workflow_work,
     user_scope,
-    progress
+    progress,
+    compact_workflow,
+    compact_work
   };
 };
