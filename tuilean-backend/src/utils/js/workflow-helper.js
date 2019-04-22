@@ -357,20 +357,23 @@ module.exports = function(context, options) {
           if (action.users){
             for ( const u of action.users){
               const user = await contextParser.getUser(u);
-              const finds = await workActionService.find({query: {
-                'workflow._id': workflow._id,
-                'work._id': work._id,
-                'work.status': work.status,
-                'action.path': action.path,
-                user_id: user._id
-              }});
+              const query = {
+                'workflow._id': workflow && workflow._id,
+                'work._id': work && work._id,
+                'work.status': work && work.status,
+                user_id: user && user._id
+              };
+              if (action && action.path){
+                query['action.path'] = action.path;
+              }
+              const finds = await workActionService.find({query});
               if(finds && finds.total < 1){
                 const createdAction = await workActionService.create(
                   {
                     workflow: _.pick(workflow, ['_id','type','path']),
                     work: _.pick(work, ['_id','path','status']),
                     action: action && _.pick(action,['path','status','progress']),
-                    user_id: user._id,
+                    user_id: user && user._id,
                     page: action.page,
                     status: 'joined'
                   });

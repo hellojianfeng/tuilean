@@ -227,4 +227,6 @@ module.exports = async function (context, options = {}) {
     }
     return context.result = await buildResult.operation({ code: 201, error:'not execute process-join-org, please check input!'  });
   }
+
+
 };

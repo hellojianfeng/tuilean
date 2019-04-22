@@ -136,6 +136,9 @@ module.exports = async function (context, options = {}) {
                       if (u === 'assigned_user'){
                         return student.email;
                       }
+                      if (u === 'self'){
+                        return context.params.user.email;
+                      }
                       if (u === 'student_parent'){
                         // todo: find student parent and add to action.users
                       }
