@@ -6,7 +6,7 @@ module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
 
-  const { compact_org_obj, owner_channel, workflow_work } = require('./schemas')(app);
+  const { compact_org_obj } = require('./schemas')(app);
 
   const users = new mongooseClient.Schema({
     mobile: {type: String},
@@ -26,20 +26,6 @@ module.exports = function (app) {
     roles: [ compact_org_obj ],
     permissions: [ compact_org_obj ],
     operations: [ compact_org_obj ],
-    channels: {
-      allow: [ owner_channel ],
-      joined: [ owner_channel ],
-      joining: [ owner_channel],
-      inviting: [ owner_channel ],
-      rejected: [ owner_channel ]
-    },
-    works: {
-      allow: [ workflow_work ],
-      joined: [ workflow_work ],
-      joining: [ workflow_work],
-      inviting: [ workflow_work ],
-      rejected: [ workflow_work ]
-    },
     current_org: {
       _id: { type: Schema.Types.ObjectId },
       path: String,

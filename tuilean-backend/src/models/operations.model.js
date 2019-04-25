@@ -15,8 +15,6 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
-  const { owner_channel, workflow_work } = require('./schemas')(app);
-
   const operations = new Schema({
     name: { type: String, required: true },
     path: { type: String, required: true },//dot seperate name of operation, unique in app
@@ -31,21 +29,7 @@ module.exports = function (app) {
     concurrent: {
       allow: { type: Number },
       current: { type: Number }
-    },
-    channels: {
-      allow: [ owner_channel ],
-      joined: [ owner_channel ],
-      joining: [ owner_channel],
-      inviting: [ owner_channel ],
-      rejected: [ owner_channel ]
-    },
-    works: {
-      allow: [ workflow_work ],
-      joined: [ workflow_work ],
-      joining: [ workflow_work],
-      inviting: [ workflow_work ],
-      rejected: [ workflow_work ]
-    },
+    }
   }, {
     timestamps: true
   });

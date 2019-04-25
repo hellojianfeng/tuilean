@@ -1,7 +1,7 @@
-// Initializes the `work-action` service on path `/work-action`
+// Initializes the `workactions` service on path `/workactions`
 const createService = require('feathers-mongoose');
-const createModel = require('../../models/work-action.model');
-const hooks = require('./work-action.hooks');
+const createModel = require('../../models/workactions.model');
+const hooks = require('./workactions.hooks');
 
 module.exports = function (app) {
   const Model = createModel(app);
@@ -13,10 +13,10 @@ module.exports = function (app) {
   };
 
   // Initialize our service with any options it requires
-  app.use('/work-action', createService(options));
+  app.use('/workactions', createService(options));
 
   // Get our initialized service so that we can register hooks
-  const service = app.service('work-action');
+  const service = app.service('workactions');
 
   service.hooks(hooks);
 };

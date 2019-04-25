@@ -10,7 +10,7 @@ const notifications = require('./notifications/notifications.service.js');
 const channels = require('./channels/channels.service.js');
 const notify = require('./notify/notify.service.js');
 const workflows = require('./workflows/workflows.service.js');
-const workAction = require('./work-action/work-action.service.js');
+const workactions = require('./workactions/workactions.service.js');
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
   app.configure(users);
@@ -25,5 +25,5 @@ module.exports = function (app) {
   app.configure(channels);
   app.configure(notify);
   app.configure(workflows);
-  app.configure(workAction);
+  app.configure(workactions);
 };

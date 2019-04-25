@@ -147,7 +147,7 @@ module.exports = async function (context, options = {}) {
                       }
                     });
                   }
-                  await workflowHelper.addWorkActions({workflow,work: {status: workData.status, actions: [action]}});
+                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [action]}});
                 }
               }
             }

@@ -1,4 +1,4 @@
-// work-action-model.js - A mongoose model
+// workactions-model.js - A mongoose model
 //
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
@@ -7,7 +7,7 @@ module.exports = function (app) {
   const { Schema } = mongooseClient;
   const schemas = require('./schemas')(app);
   const { progress, compact_workflow, compact_work } = schemas;
-  const workAction = new Schema({
+  const workactions = new Schema({
     workflow: compact_workflow,
     work: compact_work,
     action: {
@@ -25,5 +25,5 @@ module.exports = function (app) {
     timestamps: true
   });
 
-  return mongooseClient.model('workAction', workAction);
+  return mongooseClient.model('workactions', workactions);
 };

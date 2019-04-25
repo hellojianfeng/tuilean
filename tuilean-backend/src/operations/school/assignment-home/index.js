@@ -14,7 +14,7 @@ module.exports = async function (context, options = {}) {
   const user = context.params.user;
 
   //const _ = require('lodash');
-  const current_work = context.data.data.current_work;
+  const current_work = context.data.data && context.data.data.current_work;
 
   if(current_work && current_work.actions){
     const actions = current_work.actions;
@@ -22,10 +22,7 @@ module.exports = async function (context, options = {}) {
       if (a.path === 'monitor'){
         action = 'watch-assignment';
       }
-      if (a.path === 'confirm'){
-        action = 'confirm-assignment';
-      }
-      if (['update','start'].includes(a.path)){
+      if (['update','start','confirm'].includes(a.path)){
         action = 'update-assignment';
       }
     });
@@ -33,7 +30,7 @@ module.exports = async function (context, options = {}) {
 
   if (action === 'open'){
     const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
-    context.result = await buildResult.operation({assignment_works});
+    context.result = await buildResult.operation(assignment_works);
   }
 
   if (action === 'update-assignment'){

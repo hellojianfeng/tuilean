@@ -29,7 +29,8 @@ module.exports = function (app) {
     tasks: [
       {
         path: String,
-        status_sequence:[ String ],
+        name: String,
+        works:[ workSchema ],
         position: { type: Number, default: 0 },
         active: { type: Boolean, default: false }
       }

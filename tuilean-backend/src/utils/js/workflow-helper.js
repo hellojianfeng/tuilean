@@ -6,7 +6,7 @@ module.exports = function(context, options) {
   const workflowService = context.app.service('workflows');
   const operationService = context.app.service('operations');
   const userService = context.app.service('users');
-  const workActionService = context.app.service('work-action');
+  const workactionsService = context.app.service('workactions');
 
   const next = async (options = {}) => {
     const results = [];
@@ -117,7 +117,28 @@ module.exports = function(context, options) {
   };
 
   const start = async (options = {}) => {
-    options.status = 'start';
+    //options.status = 'start';
+    if(!options.work){
+      const workflow = await findOrCreateWorkflow(options);
+      if(workflow && workflow.works && Array.isArray(workflow.works)){
+        if(workflow.tasks && Array.isArray(workflow.tasks)&&!_.isEmpty(workflow.tasks)){
+          let activeTask = workflow.tasks.filter ( t => {
+            return t.active;
+          });
+          if (!_.isEmpty(activeTask)){
+            activeTask = workflow.tasks[0];
+          }
+          const activeWork = activeTask.position && activeTask.works && activeTask.works[activeTask.position] || activeTask.works && activeTask.works[0];
+          options.work = workflow.works.filter ( w => {
+            return w.status === activeWork.status;
+          } );
+        } else if(!options.work){
+          options.work = workflow.works[0];
+        }
+      } else if (!options.work) {
+        options.work = { status: 'start', actions: [workflow.owner]};
+      }
+    }
     return await current(options);
   };
 
@@ -129,32 +150,25 @@ module.exports = function(context, options) {
   const current = async ( options = {}) => {
     const oWorkflow = options && options.workflow && await findOrCreate(options.workflow);
     const actions = options && options.actions || options.work && options.work.actions || [];
-    const action = options && options.action || options.work && options.work.action || [];
+    const action = options && options.action || options.work && options.work.action;
     if (action){
       actions.push(action);
     }
     const data = options && options.data;
-    let oCurrent;
+    let work = options.work;
 
-    const status = options.status || 'start';
-    if (oWorkflow && status){
-      oCurrent = oWorkflow.works.filter( w => {
-        return w.status === status;
-      })[0];
-      //if no current status, add it
-      if(!oCurrent && actions.length > 0){
-        oCurrent = await addWorkActions({workflow: oWorkflow, work: {status, actions}});
-      }
+    if (options.status && !work && actions){
+      work = { status: options.status, actions};
     }
-    if (oCurrent){
-      if (data){
-        oCurrent.data = data;
-      }
 
-      oWorkflow.current = oCurrent;
-      await workflowService.patch(oWorkflow._id, {current: oCurrent});
-      const eventId = 'workflow_'+ oWorkflow._id + '_work_' + oCurrent._id;
+    work = await findOrCreateWork({workflow: options.workflow, work});
+
+    if (work && work._id){
+      oWorkflow.current = work;
+      await workflowService.patch(oWorkflow._id, {current: work});
+      const eventId = 'workflow_'+ oWorkflow._id + '_work_' + work._id;
       context.service.emit(eventId, {data});
+      return  work;
     }
     //otherwise return error
     return {code: 301, error: 'fail to set current, please check input!'};
@@ -260,8 +274,10 @@ module.exports = function(context, options) {
     return { code: 501, error: 'please provide valude input!'};
   };
 
-  const findOrCreate = async data => {
+  const findOrCreate = async options => {
     //
+    let data = options && options.workflow || options;
+
     if ( data && data._id && data.type && data.path && data.owner){
       return data;
     }
@@ -336,7 +352,7 @@ module.exports = function(context, options) {
     return { code: 301, error:'fail to find and add work, please check input!'};
   };
 
-  const registerWorkActions = async options => {
+  const registerWorkactions = async options => {
 
     const workData = options && options.work || options;
 
@@ -357,6 +373,7 @@ module.exports = function(context, options) {
           if (action.users){
             for ( const u of action.users){
               const user = await contextParser.getUser(u);
+              const operation = action.operation && await contextParser.getOperation(action.operation);
               const query = {
                 'workflow._id': workflow && workflow._id,
                 'work._id': work && work._id,
@@ -366,17 +383,25 @@ module.exports = function(context, options) {
               if (action && action.path){
                 query['action.path'] = action.path;
               }
-              const finds = await workActionService.find({query});
+              if (operation && operation._id){
+                query['operation_id'] = operation._id;
+              }
+              const finds = await workactionsService.find({query});
               if(finds && finds.total < 1){
-                const createdAction = await workActionService.create(
-                  {
-                    workflow: _.pick(workflow, ['_id','type','path']),
-                    work: _.pick(work, ['_id','path','status']),
-                    action: action && _.pick(action,['path','status','progress']),
-                    user_id: user && user._id,
-                    page: action.page,
-                    status: 'joined'
-                  });
+                const createData = {
+                  workflow: _.pick(workflow, ['_id','type','path']),
+                  work: _.pick(work, ['_id','path','status']),
+                  action: action && _.pick(action,['path','status','progress']),
+                  user_id: user && user._id,
+                  status: 'joined'
+                };
+                if(action.page){
+                  createData.page = action.page;
+                }
+                if(operation && operation._id){
+                  createData.operation_id = operation._id;
+                }
+                const createdAction = await workactionsService.create(createData);
                 results.push({createdUserAction: createdAction});
               } else {
                 results.push({findUserAction: finds.data[0]});
@@ -396,9 +421,9 @@ module.exports = function(context, options) {
               if (action.path){
                 query['action.path'] = action.path;
               }
-              const finds = await workActionService.find({query});
+              const finds = await workactionsService.find({query});
               if(finds && finds.total === 0){
-                const createdAction = await workActionService.create(
+                const createdAction = await workactionsService.create(
                   {
                     workflow: _.pick(workflow, ['_id','type','path']),
                     work: _.pick(work, ['_id','path','status']),
@@ -419,7 +444,7 @@ module.exports = function(context, options) {
     return { code: 302, error: 'fail to register work, please check input!'};
   };
 
-  const registerWork = registerWorkActions;
+  const registerWork = registerWorkactions;
 
   const registerWorks = async options => {
     const works = options.works || options || [];
@@ -428,7 +453,7 @@ module.exports = function(context, options) {
 
     if (workflow && works){
       for ( const work of works){
-        results = Object.assign(results, await registerWorkActions({workflow, work}));
+        results = Object.assign(results, await registerWorkactions({workflow, work}));
       }
     }
 
@@ -436,7 +461,7 @@ module.exports = function(context, options) {
 
   };
 
-  const addWorkActions = registerWorkActions;
+  const addWorkactions = registerWorkactions;
 
   const getListens = (workflow, work) => {
     return {
@@ -499,8 +524,8 @@ module.exports = function(context, options) {
       }
     };
 
-    if (operation && operation.works && operation.works.joined){
-      const finds = await workActionService.find({query: {operation_id: operation._id, status: 'joined'}});
+    if (operation && operation._id){
+      const finds = await workactionsService.find({query: {operation_id: operation._id, status: 'joined'}});
       for( const j of finds.data ) {
         await populateWork(j,{workflow_path, workflow_type});
       }
@@ -511,14 +536,14 @@ module.exports = function(context, options) {
       const idList = userOperations.map( uo => {
         return uo._id;
       });
-      const finds = await workActionService.find({query: {operation_id: {$in: idList}, status: 'joined'}});
+      const finds = await workactionsService.find({query: {operation_id: {$in: idList}, status: 'joined'}});
       for( const j of finds.data ) {
         await populateWork(j,{workflow_path, workflow_type});
       }
     }
 
     if (user){
-      const finds = await workActionService.find({query: {user_id: user._id, status: 'joined'}});
+      const finds = await workactionsService.find({query: {user_id: user._id, status: 'joined'}});
       for (const j of finds.data) {
         if (operation && operation.path && operation.org_path){
           if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
@@ -655,7 +680,7 @@ module.exports = function(context, options) {
   };
 
   return {start, end, init, current, next, find, findOrCreate, findOrCreateWorkflow,registerWorks, registerWork,
-    getListens, registerWorkActions,getWorksByAction,
-    matchAction, getWorkflow, matchNextAction, create, addWorkActions, formatAction, getUserWorks
+    getListens, registerWorkactions,getWorksByAction,
+    matchAction, getWorkflow, matchNextAction, create, addWorkactions, formatAction, getUserWorks
   };
 };
