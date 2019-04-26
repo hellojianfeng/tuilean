@@ -679,8 +679,25 @@ module.exports = function(context, options) {
     return _.pick(action,['name', 'path', 'operation','page','users', 'orgs','roles','permissions','data']);
   };
 
+  const binderWorks = async ( options = {}) => {
+    const user = options.user || context.params.user;
+    const binder = options.binder;
+
+    const action = context.data && context.data.action;
+
+    if (user && user._id && action){
+      if (action === 'show-works'){
+        return await getUserWorks(binder);
+      }
+      if(['work-detail','detail-work'].includes(action.toLowerCase())){
+        const work = context.data && context.data.data && context.data.data.work;
+        return work;
+      }
+    }
+  };
+
   return {start, end, init, current, next, find, findOrCreate, findOrCreateWorkflow,registerWorks, registerWork,
     getListens, registerWorkactions,getWorksByAction,
-    matchAction, getWorkflow, matchNextAction, create, addWorkactions, formatAction, getUserWorks
+    matchAction, getWorkflow, matchNextAction, create, addWorkactions, formatAction, getUserWorks, binderWorks
   };
 };

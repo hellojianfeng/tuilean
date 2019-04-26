@@ -16,9 +16,12 @@ module.exports = async function (context, options={}) {
     const orgs = await userOrgFind(context,options);
     const orgList = Object.values(orgs);
 
-    const works = await workflowHelper.getUserWorks();
+    context.result = await buildResult.page({ orgs: orgList });
+  }
 
-    context.result = await buildResult.page({ orgs: orgList, works });
+  const result = await workflowHelper.binderWorks();
+  if (result){
+    context.result = result;
   }
 
   return context;

@@ -17,14 +17,15 @@ module.exports = async function (context, options = {}) {
 
   //const { operation_org } = await contextParser.parse();
 
-  const current_work = context.data.data && context.data.data.current_work;
-  const current_operation = context.params.operation;
+  const result = await workflowHelper.binderWorks({binder:{operation: context.params.operation}});
+  if(result){
+    return context.result = result;
+  }
 
-  if (current_work){
-    if(current_work.operation && current_operation._id.equals(current_work.operation._id)){
-      if(current_work.work.status === 'applying' ){
-        action = 'process-join-org';
-      }
+  if (action === 'do-work'){
+    const work = context.data && context.data.data && context.data.data.work;
+    if (work.status === 'applying'){
+      action = 'process-join-org';
     }
   }
 
@@ -43,9 +44,6 @@ module.exports = async function (context, options = {}) {
     result.org_operations = operation_org_operations.filter(o=>{
       return o.path !== 'org-initialize';
     });
-
-    const works = await workflowHelper.getUserWorks({operation: context.params.operation});
-    result.works = works;
 
     context.result = await buildResult.operation(result);
 

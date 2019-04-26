@@ -20,16 +20,15 @@ module.exports = async function (context, options) {
   const contextParser = require('../../utils/js/context-parser')(context,options);
   const user = context.params.user;
 
-  const workflow = context.data && context.data.workflow || context.data.data.workflow;
-  if(workflow && workflow.status && action === 'open'){
-    action = 'show-workflow';
+  const result = await workflowHelper.binderWorks({binder:{page:'join-org'}});
+  if(result){
+    return context.result = result;
   }
 
   if (action === 'open'){
     const { user_orgs } = await contextParser.parse();
-    const works = await workflowHelper.getUserWorks({page: 'join-org'});
-
-    const result = { user_orgs, works};
+    
+    const result = { user_orgs};
 
     return context.result = await buildResult.page(result);
   }
@@ -82,10 +81,6 @@ module.exports = async function (context, options) {
     }
 
     return { code: 301, error: 'fail to apply join org, please check input!'};
-  }
-
-  if (action === 'show-workflow'){
-    return buildResult.page({workflow});
   }
 
   return { code: 300, error: 'no action is executed!'};

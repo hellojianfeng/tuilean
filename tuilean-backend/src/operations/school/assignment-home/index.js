@@ -28,6 +28,18 @@ module.exports = async function (context, options = {}) {
     });
   }
 
+  const result = await workflowHelper.binderWorks({binder:{operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'}});
+  if(result){
+    return context.result = result;
+  }
+
+  if (action === 'do-work'){
+    const work = context.data && context.data.data && context.data.data.work;
+    if (work.status === 'applying'){
+      action = 'process-join-org';
+    }
+  }
+
   if (action === 'open'){
     const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
     context.result = await buildResult.operation(assignment_works);
