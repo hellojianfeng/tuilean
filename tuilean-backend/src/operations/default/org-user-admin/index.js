@@ -19,7 +19,7 @@ module.exports = async function (context, options = {}) {
 
   const result = await workflowHelper.binderWorks({binder:{operation: context.params.operation}});
   if(result){
-    return context.result = result;
+    return context.result = await buildResult.operation(result);
   }
 
   if (action === 'do-work'){

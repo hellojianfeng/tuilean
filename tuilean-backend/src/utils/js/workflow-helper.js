@@ -131,7 +131,7 @@ module.exports = function(context, options) {
           const activeWork = activeTask.position && activeTask.works && activeTask.works[activeTask.position] || activeTask.works && activeTask.works[0];
           options.work = workflow.works.filter ( w => {
             return w.status === activeWork.status;
-          } );
+          })[0];
         } else if(!options.work){
           options.work = workflow.works[0];
         }
@@ -326,7 +326,7 @@ module.exports = function(context, options) {
 
   const findOrCreateWork= async data => {
     let workData = data.work || data;
-    if (workData && workData._id && workData.actions_hash){
+    if (workData && workData._id){
       return workData;
     }
 

@@ -61,7 +61,7 @@ module.exports = async function (context, options) {
         tasks: [
           {
             path: 'apply-join',
-            status_sequence: ['start','applying','processed','end'],
+            works: [{status:'start'},{status:'applying'},{status:'processed'},{status:'end'}],
             position: 0,
             active: true
           }
