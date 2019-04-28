@@ -24,7 +24,7 @@ module.exports = async function (context, options = {}) {
 
   if (action === 'do-work'){
     const work = context.data && context.data.data && context.data.data.work;
-    if (work.status === 'applying'){
+    if (work.work && work.work.status === 'applying'){
       action = 'process-join-org';
     }
   }
@@ -191,9 +191,9 @@ module.exports = async function (context, options = {}) {
   }
 
   if (action === 'process-join-org'){
-    const {process_result, current_work}= context.data.data;
-    const userData = context.data.data && context.data.data.user || current_work && current_work.work && current_work.work.data && current_work.work.data.user;
-    const orgData = context.data.data && context.data.data.org || current_work && current_work.work && current_work.work.data && current_work.work.data.org;
+    const {process_result, work}= context.data.data;
+    const userData = context.data.data && context.data.data.user || work && work.work && work.work.data && work.work.data.user;
+    const orgData = context.data.data && context.data.data.org || work && work.work && work.work.data && work.work.data.org;
 
     const user = await contextParser.getUser(userData);
     const org = await contextParser.getOrg(orgData);
@@ -206,8 +206,8 @@ module.exports = async function (context, options = {}) {
       if (allowJoinOrg === 'always'){
         // add user into org immediately
         userHelper.add_user_role(everyone_role);
-        if(current_work){
-          await workflowHelper.next({workflow:current_work.workflow, status: 'processed', data: {'result': 'approved'}});
+        if(work && work.workflow){
+          await workflowHelper.next({workflow:work.workflow, status: 'processed', data: {'result': 'approved'}});
         }
       }
 
@@ -215,8 +215,8 @@ module.exports = async function (context, options = {}) {
         if (process_result){
           if(['approved','rejected','processing','approve','reject'].includes(process_result)){
             await userHelper.add_user_role({role: everyone_role, user});
-            if(current_work){
-              await workflowHelper.next({workflow:current_work.workflow, status: 'processed', data: {'result': process_result}});
+            if(work && work.workflow){
+              await workflowHelper.next({workflow:work.workflow, status: 'processed', data: {'result': process_result}});
             }
             return context.result = await buildResult.operation({status: 'processed', data: {'result': process_result}});
           }

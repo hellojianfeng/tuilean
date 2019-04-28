@@ -15,6 +15,13 @@ module.exports = function (app) {
     allow_actions: { type: Schema.Types.Mixed },
     data: { type: Schema.Types.Mixed}
   });
+  const workSchema2 = new Schema({
+    name: String,
+    path: String,
+    progress: progress,
+    status: { type: String, required: true},
+    data: { type: Schema.Types.Mixed}
+  },{_id: false});
   const workflows = new Schema({
     name: { type: String },
     path: { type: String, required: true },
@@ -30,7 +37,7 @@ module.exports = function (app) {
       {
         path: String,
         name: String,
-        works:[ workSchema ],
+        works:[ workSchema2 ],
         position: { type: Number, default: 0 },
         active: { type: Boolean, default: false }
       }

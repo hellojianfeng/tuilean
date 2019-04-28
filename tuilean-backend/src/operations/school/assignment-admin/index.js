@@ -118,7 +118,7 @@ module.exports = async function (context, options = {}) {
         workflowData.type = assignment_data.type;
         const students = await orgHelper.findOrgUsers({role:'student'});
         for(const student of students){
-          const workflowData = _.pick(assignment_data,['name','description']);
+          const workflowData = _.pick(assignment_data,['name','description','works','tasks']);
           workflowData.type = 'class-assignment';
           workflowData.path = 'assign_to_'+student._id;
           workflowData.owner = { operation: {path: 'assigment-admin',org_path: current_org.path}, users: [ user.email ]};

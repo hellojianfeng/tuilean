@@ -122,16 +122,21 @@ module.exports = function(context, options) {
       const workflow = await findOrCreateWorkflow(options);
       if(workflow && workflow.works && Array.isArray(workflow.works)){
         if(workflow.tasks && Array.isArray(workflow.tasks)&&!_.isEmpty(workflow.tasks)){
-          let activeTask = workflow.tasks.filter ( t => {
+          let activeTasks = workflow.tasks.filter ( t => {
             return t.active;
           });
-          if (!_.isEmpty(activeTask)){
+          let activeTask;
+          if (_.isEmpty(activeTasks)){
             activeTask = workflow.tasks[0];
+          } else {
+            activeTask = activeTasks[0];
           }
           const activeWork = activeTask.position && activeTask.works && activeTask.works[activeTask.position] || activeTask.works && activeTask.works[0];
-          options.work = workflow.works.filter ( w => {
-            return w.status === activeWork.status;
-          })[0];
+          if (activeWork && activeWork.status){
+            options.work = workflow.works.filter ( w => {
+              return w.status === activeWork.status;
+            })[0];
+          }
         } else if(!options.work){
           options.work = workflow.works[0];
         }
