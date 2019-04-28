@@ -13,49 +13,21 @@ module.exports = async function (context, options = {}) {
   //const userHelper = require('../../../utils/js/user-helper')(context,options);
   const user = context.params.user;
 
-  //const _ = require('lodash');
-  const current_work = context.data.data && context.data.data.current_work;
-
-  if(current_work && current_work.actions){
-    const actions = current_work.actions;
-    actions.map ( a => {
-      if (a.path === 'monitor'){
-        action = 'watch-assignment';
-      }
-      if (['update','start','confirm'].includes(a.path)){
-        action = 'update-assignment';
-      }
-    });
-  }
-
   const result = await workflowHelper.binderWorks({binder:{operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'}});
   if(result){
-    return context.result = result;
+    return context.result = buildResult.operation(result);
   }
 
   if (action === 'do-work'){
     const work = context.data && context.data.data && context.data.data.work;
-    if (work.status === 'applying'){
-      action = 'process-join-org';
+    if (work.status === 'created' && action.path === 'start'){
+      await workflowHelper.next({workflow: work.workflow,next: { status: 'assigned'}});
     }
   }
 
   if (action === 'open'){
     const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
     context.result = await buildResult.operation(assignment_works);
-  }
-
-  if (action === 'update-assignment'){
-    if(current_work && current_work.work && current_work.work.status && current_work.actions){
-      if (current_work.work.status === 'start' && _.some(current_work.actions, {path: 'start'})){
-        await workflowHelper.next({workflow: current_work.workflow,next: { status: 'assigned'}});
-      }
-    }
-    context.result = await buildResult.operation({current_work});
-  }
-
-  if(action === 'watch-assignment'){
-    context.result = await buildResult.operation({current_work});
   }
 
   return context;
