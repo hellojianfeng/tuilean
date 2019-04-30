@@ -6,7 +6,7 @@ const fs = require('fs');
 module.exports = function (options = {}) {
   return async context => {
     const contextParser = require('../utils/js/context-parser')(context,options);
-    const { current_operation, everyone_role_operations, everyone_permission_operations, user_operations, user_follow_operations } = await contextParser.parse();
+    const { current_org, current_operation, everyone_role_operations, everyone_permission_operations, user_operations, user_follow_operations } = await contextParser.parse();
 
     if (current_operation){
       let isAllowOperation = false;
@@ -39,6 +39,7 @@ module.exports = function (options = {}) {
       }
 
       context.params.operation = current_operation;
+      context.params.current = { org: current_org, operation: current_operation };
       const operationPath = current_operation.path;
       const operationApp = current_operation.app || 'default';
       if (fs.existsSync('src/operations/'+ operationApp + '/' + operationPath + '/data.json'))

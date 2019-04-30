@@ -18,6 +18,11 @@ module.exports = async function (context, options = {}) {
   const userService = context.app.service('users');
   await userService.patch(user._id, { current_org: {_id: current_operation_org._id, path: current_operation_org.path}});
 
+  const result = await workflowHelper.binderWorks({binder:{org: context.params.current.org}});
+  if(result){
+    return context.result = await buildResult.operation(result);
+  }
+
   if (action === 'open'){
 
     let allOperations = Object.assign(user_operations,everyone_role_operations);

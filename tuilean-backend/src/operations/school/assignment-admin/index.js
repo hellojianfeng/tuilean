@@ -128,11 +128,12 @@ module.exports = async function (context, options = {}) {
             for(const workData of assignment_data.works){
               if (workData && workData.actions){
                 for(const action of workData.actions){
-                  if(action.users){
-                    if (typeof action.users === 'string'){
-                      action.users = [action.users];
+                  const theAction = Object.assign({},action);
+                  if(theAction.users){
+                    if (typeof theAction.users === 'string'){
+                      theAction.users = [theAction.users];
                     }
-                    action.users = action.users.map ( u => {
+                    theAction.users = theAction.users.map ( u => {
                       if (u === 'assigned_user'){
                         return student.email;
                       }
@@ -141,13 +142,15 @@ module.exports = async function (context, options = {}) {
                       }
                       if (u === 'student_parent'){
                         // todo: find student parent and add to action.users
+                        return;
                       }
                       if(validateEmail(u)){
                         return u;
                       }
                     });
                   }
-                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [action]}});
+                  theAction.users = _.compact(theAction.users);
+                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [theAction]}});
                 }
               }
             }

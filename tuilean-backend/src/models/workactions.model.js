@@ -17,6 +17,8 @@ module.exports = function (app) {
     },
     page: String,
     status: String,
+    org_id: { type: Schema.Types.ObjectId },
+    org_path: String,
     user_id: { type: Schema.Types.ObjectId },
     operation_id: { type: Schema.Types.ObjectId },
     role_id: { type: Schema.Types.ObjectId },

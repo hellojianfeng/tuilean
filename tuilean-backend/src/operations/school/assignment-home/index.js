@@ -1,5 +1,5 @@
 //const validateEmail = require('../../../utils/tools/validate-email');
-const _ = require('lodash');
+//const _ = require('lodash');
 module.exports = async function (context, options = {}) {
 
   //const operationData = context.data.data || {};
@@ -15,21 +15,19 @@ module.exports = async function (context, options = {}) {
 
   const result = await workflowHelper.binderWorks({binder:{operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'}});
   if(result){
-    return context.result = buildResult.operation(result);
+    return context.result = await buildResult.operation(result);
   }
 
   if (action === 'do-work'){
     const work = context.data && context.data.data && context.data.data.work;
-    if (work.status === 'created' && action.path === 'start'){
-      await workflowHelper.next({workflow: work.workflow,next: { status: 'assigned'}});
+    if (work.work && work.work.status === 'assigned' && work.action.path === 'update'){
+      await workflowHelper.next({workflow: work.workflow,next: { status: 'completed'}});
     }
-  }
-
-  if (action === 'open'){
+  
     const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
-    context.result = await buildResult.operation(assignment_works);
+    return context.result = await buildResult.operation(assignment_works);
   }
 
-  return context;
+  return { error: 301, message: 'not run any action!'};
 };
 

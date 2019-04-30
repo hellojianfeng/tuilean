@@ -12,12 +12,6 @@ module.exports = function(context, options) {
     const results = [];
     const oWorkflow = options && options.workflow && await getWorkflow(options.workflow);
     if (oWorkflow){
-      const history = oWorkflow.history;
-      if(oWorkflow.current){
-        history.push(oWorkflow.current);
-        oWorkflow.previous = oWorkflow.current;
-      }
-
       const currentData = options && options.current;
       const nextData = options && options.next || options;
       const taskPath = options && options.task;
@@ -405,6 +399,8 @@ module.exports = function(context, options) {
                 }
                 if(operation && operation._id){
                   createData.operation_id = operation._id;
+                  createData.org_id = operation.org_id;
+                  createData.org_path = operation.org_path;
                 }
                 const createdAction = await workactionsService.create(createData);
                 results.push({createdUserAction: createdAction});
@@ -434,6 +430,8 @@ module.exports = function(context, options) {
                     work: _.pick(work, ['_id','path','status']),
                     action: action && _.pick(action,['path','status','progress']),
                     operation_id: operation._id,
+                    org_id: operation.org_id,
+                    org_path: operation.org_path,
                     status: 'joined'
                   });
                 results.push({createdOperationAction: createdAction});
@@ -489,18 +487,10 @@ module.exports = function(context, options) {
     const current_works = [];
     const previous_works = [];
 
-    const populateWork = async ( work, options ) => {
-      const { workflow_type, workflow_path } = options;
+    const populateWork = async ( work ) => {
       const j = work;
       if ( j && j.work && j.workflow )
       {
-        if(workflow_type && workflow_type !== j.workflow.type){
-          return;
-        }
-        if(workflow_path && workflow_path !== j.workflow.path){
-          return;
-        }
-
         const operation = j.operation_id && await operationService.get(j.operation_id);
         const user = j.user_id && await userService.get(j.user_id);
 
@@ -518,6 +508,12 @@ module.exports = function(context, options) {
         if (j.action){
           theWork.action = j.action;
         }
+        if (j.org_id){
+          theWork.org_id = j.org_id;
+        }
+        if(j.org_path){
+          theWork.org_path = j.org_path;
+        }
         if (workflow && workflow.current && workflow.current.status && j.work.status === workflow.current.status){
           theWork.work = workflow.current;
           current_works.push(theWork);
@@ -529,43 +525,37 @@ module.exports = function(context, options) {
       }
     };
 
+    const query = {};
+
+    if (user && user._id){
+      query.user_id = user._id;
+    }
+
     if (operation && operation._id){
-      const finds = await workactionsService.find({query: {operation_id: operation._id, status: 'joined'}});
-      for( const j of finds.data ) {
-        await populateWork(j,{workflow_path, workflow_type});
-      }
+      query.operation_id = operation._id;
     }
 
-    if (org && org.path){
-      const userOperations = await contextParser.getOrgUserOperations({org});
-      const idList = userOperations.map( uo => {
-        return uo._id;
-      });
-      const finds = await workactionsService.find({query: {operation_id: {$in: idList}, status: 'joined'}});
-      for( const j of finds.data ) {
-        await populateWork(j,{workflow_path, workflow_type});
-      }
+    if (org && org._id){
+      query.org_id = org._id;
     }
 
-    if (user){
-      const finds = await workactionsService.find({query: {user_id: user._id, status: 'joined'}});
-      for (const j of finds.data) {
-        if (operation && operation.path && operation.org_path){
-          if (_.some(j.actions, {operation:{path: operation.path, org_path: operation.org_path}})){
-            await populateWork(j,{workflow_path, workflow_type});
-          }
-        } else if (page){
-          if (_.some(j.actions, {page})){
-            await populateWork(j,{workflow_path, workflow_type});
-          }
-        }
-        else if (org && org.path){
-          if (_.some(j.actions, {operation:{org_path: org.path}})){
-            await populateWork(j,{workflow_path, workflow_type});
-          }
-        } else {
-          await populateWork(j,{workflow_path, workflow_type});
-        }
+    if (page){
+      query.page = page;
+    }
+
+    if (workflow_path){
+      query['workflow.path'] = workflow_path;
+    }
+
+    if (workflow_type){
+      query['workflow.type'] = workflow_type;
+    }
+
+    if (query.user_id || query.operation_id || query.org_id){
+      query.status = 'joined';
+      const finds = await workactionsService.find({query});
+      for( const j of finds.data ) {
+        await populateWork(j);
       }
     }
 
