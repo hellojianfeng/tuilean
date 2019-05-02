@@ -23,6 +23,18 @@ module.exports = async function (context, options = {}) {
     if (work.work && work.work.status === 'assigned' && work.action.path === 'update'){
       await workflowHelper.next({workflow: work.workflow,next: { status: 'completed'}});
     }
+
+    if (work.work && work.work.status === 'updated' && work.action.path === 'complete'){
+      await workflowHelper.next({workflow: work.workflow,next: { status: 'completed'}});
+    }
+
+    if (work.work && work.work.status === 'completed' && work.action.path === 'confirm'){
+      await workflowHelper.next({workflow: work.workflow,next: { status: 'confirmed'}});
+    }
+
+    if (work.work && work.work.status === 'confirmed' && work.action.path === 'end'){
+      await workflowHelper.next({workflow: work.workflow,next: { status: 'end'}});
+    }
   
     const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
     return context.result = await buildResult.operation(assignment_works);
