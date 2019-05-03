@@ -17,6 +17,9 @@ module.exports = function(context, options) {
       const taskPath = options && options.task;
 
       let current = oWorkflow.current;
+      if(options.current && options.current.action){
+        current.action = options.current.action;
+      }
       let next = nextData && await findOrCreateWork({workflow: oWorkflow, work: nextData});
 
       if (!next){
@@ -68,7 +71,7 @@ module.exports = function(context, options) {
             await workflowService.patch(
               oWorkflow._id,
               {
-                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current, tasks: oWorkflow.tasks
+                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current
               }
             );
             //by default create a notify for workflow.next action
