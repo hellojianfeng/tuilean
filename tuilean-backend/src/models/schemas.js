@@ -118,9 +118,13 @@ module.exports = function (app) {
   });
 
   const progress = new Schema({
-    value: {type: Number, default: 0},
-    outof: {type: Number, default: 100},
+    value: { type: Number, default: 0 },
+    outof: { type: Number, default: 100 },
     data: { type: Schema.Types.Mixed }
+  });
+
+  const compact_workaction = new Schema({
+    _id: Schema.Types.ObjectId,
   });
 
   return {
@@ -137,6 +141,7 @@ module.exports = function (app) {
     user_scope,
     progress,
     compact_workflow,
-    compact_work
+    compact_work,
+    compact_workaction
   };
 };

@@ -5,12 +5,16 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const schemas = require('./schemas')(app);
-  const { workflow_work, workflow_action, progress } = schemas;
+  const { workflow_work, workflow_action, progress, compact_user, compact_workaction } = schemas;
   const { Schema } = mongooseClient;
   const workSchema = new Schema({
     name: String,
     path: String,
     progress: progress,
+    executed: {
+      workactions: [ compact_workaction ],
+      users:[ compact_user ]
+    },
     status: { type: String, required: true},
     allow_actions: { type: Schema.Types.Mixed },
     data: { type: Schema.Types.Mixed}
@@ -22,6 +26,7 @@ module.exports = function (app) {
     status: { type: String, required: true},
     data: { type: Schema.Types.Mixed}
   },{_id: false});
+
   const workflows = new Schema({
     name: { type: String },
     path: { type: String, required: true },

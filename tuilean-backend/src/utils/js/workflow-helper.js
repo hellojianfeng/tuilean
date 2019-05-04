@@ -62,11 +62,15 @@ module.exports = function(context, options) {
 
           if(allowNext && oWorkflow){
             next.data = nextData && nextData.data;
+            current.executed.users.push(context.params.user);
+            if(options.workaction){
+              current.executed.workactions.push(options.workaction);
+            }
+            if(oWorkflow.history && oWorkflow.previous){
+              oWorkflow.history.push(oWorkflow.previous);
+            }
             oWorkflow.previous = current;
             oWorkflow.current = next;
-            if(oWorkflow.history){
-              oWorkflow.history.push(oWorkflow.current);
-            }
 
             await workflowService.patch(
               oWorkflow._id,
@@ -498,7 +502,7 @@ module.exports = function(context, options) {
         const user = j.user_id && await userService.get(j.user_id);
 
         const workflow = await getWorkflow(j.workflow);
-        const theWork = { workflow: j.workflow, status: j.status};
+        const theWork = { _id: j._id, workflow: j.workflow, status: j.status};
         if(operation){
           theWork.operation = _.pick(operation,['_id','path','org_path']);
         }
@@ -522,8 +526,12 @@ module.exports = function(context, options) {
           current_works.push(theWork);
         }
         if (workflow && workflow.previous && workflow.previous.status && j.work.status === workflow.previous.status){
-          theWork.work = workflow.previous;
-          previous_works.push(theWork);
+          workflow.previous.executed.workactions.map ( wa => {
+            if (wa && wa._id && wa._id.equals(j._id)){
+              theWork.work = workflow.previous;
+              previous_works.push(theWork);
+            }
+          });
         }
       }
     };

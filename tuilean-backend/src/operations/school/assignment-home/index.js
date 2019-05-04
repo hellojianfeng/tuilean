@@ -21,21 +21,21 @@ module.exports = async function (context, options = {}) {
   if (action === 'do-work'){
     const work = context.data && context.data.data && context.data.data.work;
     if (work.work && work.work.status && work.action.path === 'update'){
-      await workflowHelper.next({workflow: work.workflow,current: work, next: { status: 'updated'}});
+      await workflowHelper.next({workflow: work.workflow,workaction: work, next: { status: 'updated'}});
     }
-    
+
     if (work.work && work.work.status && work.action.path === 'complete'){
-      await workflowHelper.next({workflow: work.workflow, next: { status: 'completed'}});
+      await workflowHelper.next({workflow: work.workflow, workaction: work, next: { status: 'completed'}});
     }
 
     if (work.work && work.work.status  && work.action.path === 'confirm'){
-      await workflowHelper.next({workflow: work.workflow, next: { status: 'confirmed'}});
+      await workflowHelper.next({workflow: work.workflow, workaction: work, next: { status: 'confirmed'}});
     }
 
     if (work.work && work.work.status && work.action.path === 'end'){
-      await workflowHelper.next({workflow: work.workflow, next: { status: 'end'}});
+      await workflowHelper.next({workflow: work.workflow, workaction: work, next: { status: 'end'}});
     }
-  
+
     const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
     return context.result = await buildResult.operation(assignment_works);
   }
