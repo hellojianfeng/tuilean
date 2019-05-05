@@ -34,8 +34,6 @@ module.exports = function (app) {
     data: { type: Schema.Types.Mixed }
   });
 
-  const { owner_channel } = require('./schemas')(app);
-
   const orgs = new Schema({
     path: { type: String, unique: true }, // # sperated string, for example, company1#department1#office1, default is same as name
     name: { type: String },
@@ -49,13 +47,6 @@ module.exports = function (app) {
     tags: { type: String },
     profiles: [ orgProfile ],
     follows: [followOrgSchema],
-    channels: {
-      allow: [ owner_channel ],
-      joined: [ owner_channel ],
-      joining: [ owner_channel],
-      inviting: [ owner_channel ],
-      rejected: [ owner_channel ]
-    },
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true

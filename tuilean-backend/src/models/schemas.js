@@ -86,14 +86,65 @@ module.exports = function (app) {
     page: String
   }, {_id: false });
 
+  const workflow_action = new Schema({
+    name: { type: String },
+    path: { type: String },
+    page: String,
+    operation: { type: orgObj },
+    users: [ String ],
+    permissions: [ orgObj ],
+    roles: [ orgObj ],
+    orgs: [ compact_org ],
+    data: { type: Schema.Types.Mixed }
+  },{_id: false});
+
+  const compact_workflow = new Schema({
+    _id: Schema.Types.ObjectId,
+    type: String,
+    path: String,
+    data: { type: Schema.Types.Mixed }
+  },{_id: false});
+
+  const compact_work = new Schema({
+    _id: Schema.Types.ObjectId,
+    path: String,
+    status: String,
+    data: { type: Schema.Types.Mixed }
+  },{_id: false});
+
+  const workflow_work = new Schema({
+    workflow: compact_workflow,
+    work: compact_work,
+    actions:  [workflow_action] ,
+    actions_hash: [String] ,
+    data: { type: Schema.Types.Mixed }
+  });
+
+  const progress = new Schema({
+    value: { type: Number, default: 0 },
+    outof: { type: Number, default: 100 },
+    data: { type: Schema.Types.Mixed }
+  });
+
+  const compact_workaction = new Schema({
+    _id: Schema.Types.ObjectId,
+  });
+
   return {
     channel_obj: channelSchema,
     owner_channel: channelSchema,
     channel_scope: scopeSchema,
     compact_org_obj: orgObj,
-    compact_org: orgSchema.page,
+    compact_org: orgSchema,
     channel_operation_scope,
     channel_page_scope,
     compact_user,
-    user_scope  };
+    workflow_action,
+    workflow_work,
+    user_scope,
+    progress,
+    compact_workflow,
+    compact_work,
+    compact_workaction
+  };
 };

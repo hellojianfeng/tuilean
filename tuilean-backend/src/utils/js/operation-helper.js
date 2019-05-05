@@ -1,12 +1,9 @@
-// Use this hook to manipulate incoming or outgoing data.
-// For more information on hooks see: http://docs.feathersjs.com/api/hooks.html
-
-// eslint-disable-next-line no-unused-vars
 const fs = require('fs');
-module.exports = function (options = {}) {
-  return async context => {
+module.exports = function(context, options) {
+  const doOperation = async data => {
+    context.data.data = data;
     const contextParser = require('../utils/js/context-parser')(context,options);
-    const { current_org, current_operation, everyone_role_operations, everyone_permission_operations, user_operations, user_follow_operations } = await contextParser.parse();
+    const { current_operation, everyone_role_operations, everyone_permission_operations, user_operations, user_follow_operations } = await contextParser.parse();
 
     if (current_operation){
       let isAllowOperation = false;
@@ -39,7 +36,6 @@ module.exports = function (options = {}) {
       }
 
       context.params.operation = current_operation;
-      context.params.current = { org: current_org, operation: current_operation };
       const operationPath = current_operation.path;
       const operationApp = current_operation.app || 'default';
       if (fs.existsSync('src/operations/'+ operationApp + '/' + operationPath + '/data.json'))
@@ -53,19 +49,22 @@ module.exports = function (options = {}) {
         const doOperation = require('../operations/'  + operationApp + '/' + operationPath + '/index.js');
         const doResult = await doOperation(context,options);
         //if not show doOperation result, should add record operation
-        if (!context.result){
-          context.data.result = doResult;
-          context.data.operation_id = current_operation._id;
-          context.data.org_id = current_operation.org_id;
-          context.data.org_path = current_operation.org_path;
-          context.data.user = {_id: context.params.user._id, email: context.params.user.email};
-        }
+        return {
+          result: doResult,
+          operation_id: current_operation._id,
+          org_id: current_operation.org_id,
+          org_path: current_operation.org_path,
+          user: {_id: context.params.user._id, email: context.params.user.email}
+        };
       } else {
         throw new Error('not find index.js for operation of '+ operationPath );
       }
     } else {
       throw new Error('not find valid operation!');
     }
-    return context;
   };
+  const getConfiguration = () => {
+    return context.params && context.params.configuration || {};
+  };
+  return {doOperation, getConfiguration};
 };

@@ -99,19 +99,21 @@ module.exports = function (options = {}) {
                         }
                       }
                     ],
-                    workflow: {
-                      current: {
-                        operations: [
-                          {
-                            path: 'org-user-admin',
-                            action: 'process-apply',
-                            data: 'contents.data'
-                          }
-                        ]
-                      }
-                    }
                   }
-                ]
+                ],
+                workflow: {
+                  before_send: {
+                    operations: [
+                      {
+                        path: 'org-user-admin',
+                        action: 'process-apply',
+                        data: 'data.contents[].data'
+                      }
+                    ]
+                  },
+                  after_sent:{},
+                  waiting_for_process:{}
+                }
               }
             ]
           }

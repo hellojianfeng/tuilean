@@ -3,14 +3,31 @@ module.exports = async function (context, options = {}) {
 
   //const operationData = context.data.data || {};
   //const operation = options.current_operation;
-  const action = context.data.action || 'open';
+  let action = context.data.action || 'open';
   const contextParser = require('../../../utils/js/context-parser')(context,options);
   const buildResult = require('../../../utils/js/build-result')(context,options);
-  const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
+  const userHelper = require('../../../utils/js/user-helper')(context,options);
+  //const notifyHelper = require('../../../utils/js/notify-helper')(context,options);
+  const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
+  const operationHelper = require('../../../utils/js/operation-helper')(context,options);
   const _ = require('lodash');
 
   //const mongooseClient = context.app.get('mongooseClient');
   const userService = context.app.service('users');
+
+  //const { operation_org } = await contextParser.parse();
+
+  const result = await workflowHelper.binderWorks({binder:{operation: context.params.operation}});
+  if(result){
+    return context.result = await buildResult.operation(result);
+  }
+
+  if (action === 'do-work'){
+    const work = context.data && context.data.data && context.data.data.work;
+    if (work.work && work.work.status === 'applying'){
+      action = 'process-join-org';
+    }
+  }
 
   //open action return org user list
   if (action === 'open'){
@@ -151,18 +168,63 @@ module.exports = async function (context, options = {}) {
     return context;
   }
 
-  if (action === 'find-join-org-requests'){
-    const { operation_org } = await contextParser.parse();
-    const status = context.data.data && context.data.data.status || 'new';
-    const query = {
-      'to_channel.path': 'org#' + operation_org.path + '#operation' + 'org-user-admin',
-      'listen':'join-org',
-      status 
-    };
-    const requests = await notifyHelper.find(query);
-    context.result = await buildResult.operation({ join_org_requests: requests });
+  if (action === 'find-join-org-works'){
+
+    const workflows = await workflowHelper.find({
+      type: 'join-org',
+      status: 'applying',
+      next: { action: {operation: { _id: context.params.operation._id}}}
+    });
+
+    const works = [];
+
+    workflows.map ( wf => {
+      works.push({
+        type: 'join-org',
+        current: wf.current,
+        previous: _.pick(wf.previous,['actions','status']),
+        workflow: wf
+      });
+    });
+
+    return context.result = await buildResult.operation({ join_org_works: works });
   }
 
-  return context;
-};
+  if (action === 'process-join-org'){
+    const {process_result, work}= context.data.data;
+    const userData = context.data.data && context.data.data.user || work && work.work && work.work.data && work.work.data.user;
+    const orgData = context.data.data && context.data.data.org || work && work.work && work.work.data && work.work.data.org;
 
+    const user = await contextParser.getUser(userData);
+    const org = await contextParser.getOrg(orgData);
+
+    if (user && org){
+      const configuration = operationHelper.getConfiguration();
+      const allowJoinOrg = configuration && configuration.allow && configuration.allow.join_org && configuration.allow.join_org || 'need_approve';
+      const { everyone_role } = await contextParser.parse();
+
+      if (allowJoinOrg === 'always'){
+        // add user into org immediately
+        userHelper.add_user_role(everyone_role);
+        if(work && work.workflow){
+          await workflowHelper.next({workflow:work.workflow, status: 'processed', data: {'result': 'approved'}});
+        }
+      }
+
+      if (allowJoinOrg === 'need_approve'){
+        if (process_result){
+          if(['approved','rejected','processing','approve','reject'].includes(process_result)){
+            await userHelper.add_user_role({role: everyone_role, user});
+            if(work && work.workflow){
+              await workflowHelper.next({workflow:work.workflow, status: 'processed', data: {'result': process_result}});
+            }
+            return context.result = await buildResult.operation({status: 'processed', data: {'result': process_result}});
+          }
+        }
+      }
+    }
+    return context.result = await buildResult.operation({ code: 201, error:'not execute process-join-org, please check input!'  });
+  }
+
+
+};

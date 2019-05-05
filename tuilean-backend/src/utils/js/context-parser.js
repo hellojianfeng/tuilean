@@ -341,7 +341,11 @@ module.exports = function (context,options={}, refresh=false) {
   };
 
   const getOperation = async ( operationData ) => {
-    return await getModel(operationData, operationService);
+    if(operationData.operation && typeof operationData.operation === 'string' && operationData.org){
+      operationData.path = operationData.operation;
+    }
+    if (operationData)
+      return await getModel(operationData, operationService);
   };
 
   const getOperations = async ( operationsData ) => {
@@ -386,7 +390,7 @@ module.exports = function (context,options={}, refresh=false) {
 
   const getOrgUserOperations = async ( options={} ) => {
     const user = options.user || context.params.user;
-    const org = options.org || await getCurrentOperationOrg() || await getCurrentOrg();
+    const org = await getOrg(options.org) || await getCurrentOperationOrg() || await getCurrentOrg();
     const idList = user.operations.map ( o => {
       if(o.org_path === org.path)
       {return o._id;}
@@ -494,6 +498,10 @@ module.exports = function (context,options={}, refresh=false) {
 
     const operationOrg = await getCurrentOperationOrg();
     const orgPath = options.org && options.org.path || operationOrg && operationOrg.path;
+    const roles = options.roles || [];
+    if (options.role){
+      roles.push(role);
+    }
 
     const finds = await userService.find({query: { $or: [
       {'roles.org_path': orgPath},
@@ -502,11 +510,15 @@ module.exports = function (context,options={}, refresh=false) {
     ]}});
 
     //only return roles in org for users
-    return finds.data.map ( u => {
+    return finds.data.filter ( u => {
       u.roles = u.roles.filter ( r => {
-        return r.org_path === orgPath;
+        if (r.org_path === orgPath){
+          if (roles.length === 0 || roles.includes(r.path)){
+            return true;
+          }
+        }
       });
-      return u;
+      return u.roles.length > 0;
     });
   };
 
@@ -704,7 +716,7 @@ module.exports = function (context,options={}, refresh=false) {
     getOrg, getRole, getRoles, getPermission, getPermissions, getOperation, getOperations, getUser, getUsers,
     getCurrentOrg, getCurrentOperation, getCurrentOperationOrg, getFollowOrg, getCurrentFollowOrg,
     getEveryoneRole, getEveryonePermission, getEveryoneRolePermissions, getEveryoneRoleOperations, getEveryonePermissionOperations,
-    getOrgUserRoles, getOrgUserPermissions, getOrgUserFollowOperations, getOrgUserFollowPermissions,
+    getOrgUserRoles, getOrgUserPermissions, getOrgUserOperations, getOrgUserFollowOperations, getOrgUserFollowPermissions,
     getOrgUsers, getOrgRoles, getOrgPermissions, getOrgOperations,
     getChannel
   };
