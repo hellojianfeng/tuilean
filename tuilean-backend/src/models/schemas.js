@@ -101,12 +101,15 @@ module.exports = function (app) {
   const compact_workflow = new Schema({
     _id: Schema.Types.ObjectId,
     type: String,
-    path: String
+    path: String,
+    data: { type: Schema.Types.Mixed }
   },{_id: false});
 
   const compact_work = new Schema({
     _id: Schema.Types.ObjectId,
-    status: String
+    path: String,
+    status: String,
+    data: { type: Schema.Types.Mixed }
   },{_id: false});
 
   const workflow_work = new Schema({

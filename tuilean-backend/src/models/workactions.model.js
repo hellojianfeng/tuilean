@@ -13,7 +13,8 @@ module.exports = function (app) {
     action: {
       path: String,
       status: String,
-      progress
+      progress,
+      data: { type: Schema.Types.Mixed }
     },
     page: String,
     status: String,

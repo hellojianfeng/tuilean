@@ -5,7 +5,7 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const schemas = require('./schemas')(app);
-  const { workflow_work, workflow_action, progress, compact_user, compact_workaction } = schemas;
+  const { workflow_action, progress, compact_user, compact_workaction } = schemas;
   const { Schema } = mongooseClient;
   const workSchema = new Schema({
     name: String,
@@ -47,7 +47,7 @@ module.exports = function (app) {
         active: { type: Boolean, default: false }
       }
     ],
-    history: [ workflow_work ],
+    history: [ workSchema ],
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true

@@ -493,6 +493,7 @@ module.exports = function(context, options) {
 
     const current_works = [];
     const previous_works = [];
+    const history_works = [];
 
     const populateWork = async ( work ) => {
       const j = work;
@@ -533,6 +534,17 @@ module.exports = function(context, options) {
             }
           });
         }
+        if (workflow && workflow.history){
+          workflow.history.map ( w => {
+            const workactions = w.executed && w.executed.workactions;
+            workactions.map ( wa => {
+              if (wa && wa._id && wa._id.equals(j._id)){
+                theWork.work = w;
+                history_works.push(theWork);
+              }
+            });
+          });
+        }
       }
     };
 
@@ -570,7 +582,7 @@ module.exports = function(context, options) {
       }
     }
 
-    return {current_works, previous_works};
+    return {current_works, previous_works, history_works};
   };
 
   const getWorksByAction = async ( options = {}) => {
