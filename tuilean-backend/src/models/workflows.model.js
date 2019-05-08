@@ -15,6 +15,7 @@ module.exports = function (app) {
       workactions: [ compact_workaction ],
       users:[ compact_user ]
     },
+    active: {type: String, enum:['true','cancel','end'], default: 'true'},
     status: { type: String, required: true},
     allow_actions: { type: Schema.Types.Mixed },
     data: { type: Schema.Types.Mixed}
@@ -37,7 +38,7 @@ module.exports = function (app) {
     previous: workSchema,
     current: workSchema,
     next: workSchema,
-    status: String,
+    active: {type: String, enum:['true','cancel','end'], default: 'true'},
     tasks: [
       {
         path: String,

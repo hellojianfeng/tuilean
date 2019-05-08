@@ -503,7 +503,7 @@ module.exports = function(context, options) {
         const user = j.user_id && await userService.get(j.user_id);
 
         const workflow = await getWorkflow(j.workflow);
-        const theWork = { _id: j._id, workflow: j.workflow, status: j.status};
+        const theWork = { _id: j._id, workflow: j.workflow};
         if(operation){
           theWork.operation = _.pick(operation,['_id','path','org_path']);
         }
@@ -575,7 +575,7 @@ module.exports = function(context, options) {
     }
 
     if (query.user_id || query.operation_id || query.org_id){
-      query.status = 'joined';
+      query.join = 'joined';
       const finds = await workactionsService.find({query});
       for( const j of finds.data ) {
         await populateWork(j);
