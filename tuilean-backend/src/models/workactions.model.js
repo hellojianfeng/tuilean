@@ -17,7 +17,7 @@ module.exports = function (app) {
       data: { type: Schema.Types.Mixed }
     },
     page: String,
-    join: { type: String, enums: ['joined','rejected', 'pending'] },
+    status: String,
     org_id: { type: Schema.Types.ObjectId },
     org_path: String,
     user_id: { type: Schema.Types.ObjectId },

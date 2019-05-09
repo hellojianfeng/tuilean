@@ -363,130 +363,46 @@ return org list for user to join
 
 ```JSON
 {
-    "page": "join-org",
-    "action": "find-org",
-    "data": {},
-    "user": {
-        "_id": "5c6deba80e758dd951c0aed6",
-        "email": "user2@example.com"
+    "operation": {
+        "_id": "5cd377a7d0d4c0408e22fbe5",
+        "path": "org-user-admin",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
     },
-    "result": [
-        {
-            "_id": "5c6deb8a0e758dd951c0aec2",
-            "channels": {
-                "allow": [],
-                "joined": [],
-                "joining": [],
-                "inviting": [],
-                "rejected": []
-            },
-            "name": "class1",
-            "type": {
-                "_id": "5c6deb8a0e758dd951c0aec1",
-                "path": "school.class.primary"
-            },
-            "path": "class1",
-            "profiles": [],
-            "follows": [],
-            "createdAt": "2019-02-21T00:06:34.363Z",
-            "updatedAt": "2019-02-21T00:06:34.363Z",
-            "__v": 0
-        },
-        {
-            "_id": "5c6f801e603c804268ab9b76",
-            "channels": {
-                "allow": [],
-                "joined": [],
-                "joining": [],
-                "inviting": [],
-                "rejected": []
-            },
-            "name": "class2",
-            "type": {
-                "_id": "5c6deb8a0e758dd951c0aec1",
-                "path": "school.class.primary"
-            },
-            "path": "class2",
-            "profiles": [],
-            "follows": [],
-            "createdAt": "2019-02-22T04:52:46.765Z",
-            "updatedAt": "2019-02-22T04:52:46.765Z",
-            "__v": 0
-        },
-        {
-            "_id": "5c6f8023603c804268ab9b83",
-            "channels": {
-                "allow": [],
-                "joined": [],
-                "joining": [],
-                "inviting": [],
-                "rejected": []
-            },
-            "name": "class3",
-            "type": {
-                "_id": "5c6deb8a0e758dd951c0aec1",
-                "path": "school.class.primary"
-            },
-            "path": "class3",
-            "profiles": [],
-            "follows": [],
-            "createdAt": "2019-02-22T04:52:51.808Z",
-            "updatedAt": "2019-02-22T04:52:51.808Z",
-            "__v": 0
-        },
-        {
-            "_id": "5c6f802b603c804268ab9b90",
-            "channels": {
-                "allow": [],
-                "joined": [],
-                "joining": [],
-                "inviting": [],
-                "rejected": []
-            },
-            "name": "class4",
-            "type": {
-                "_id": "5c6deb8a0e758dd951c0aec1",
-                "path": "school.class.primary"
-            },
-            "path": "class4",
-            "profiles": [],
-            "follows": [],
-            "createdAt": "2019-02-22T04:52:59.932Z",
-            "updatedAt": "2019-02-22T04:52:59.932Z",
-            "__v": 0
-        },
-        {
-            "_id": "5c6f8030603c804268ab9b9d",
-            "channels": {
-                "allow": [],
-                "joined": [],
-                "joining": [],
-                "inviting": [],
-                "rejected": []
-            },
-            "name": "class5",
-            "type": {
-                "_id": "5c6deb8a0e758dd951c0aec1",
-                "path": "school.class.primary"
-            },
-            "path": "class5",
-            "profiles": [],
-            "follows": [],
-            "createdAt": "2019-02-22T04:53:04.836Z",
-            "updatedAt": "2019-02-22T04:53:04.836Z",
+    "action": "add-user-role",
+    "user": {
+        "_id": "5cd37658f32d374069512485",
+        "email": "admin@example.com"
+    },
+    "result": {
+        "user": {
+            "_id": "5cd37c22134d11414671d089",
+            "email": "teacher1@example.com",
+            "roles": [
+                {
+                    "_id": "5cd377bfd0d4c0408e22fbf0",
+                    "path": "teacher",
+                    "org_id": "5cd377a7d0d4c0408e22fbe1",
+                    "org_path": "class1"
+                }
+            ],
+            "permissions": [],
+            "operations": [],
+            "createdAt": "2019-05-09T01:02:26.471Z",
+            "updatedAt": "2019-05-09T01:02:26.471Z",
             "__v": 0
         }
-    ]
+    }
 }
 ```
 
-## API For Join Org
+## Login as teacher and create assignment
 
 ### API detail:
 
 before access api, please add user token into header of Authorization
 
-**URL** : http://host/pages
+**URL** : http://host/do-operation
 
 **Method**: POST
 
@@ -494,16 +410,152 @@ before access api, please add user token into header of Authorization
 
 please note that:
 
-1. page name must be 'join-org''
-2. action must be 'apply-join' to execute join action. actually join-org also support other actions, please refer to api document for more actions
-3. org must be provided under data object.
+1. page name must be 'assignment-admin'
+2. 'create-assignment-start' action will list selections used for user's choice when create assignment.
+3. 'create-assignment-end' action to execute create assignment action finaly. actually assignment-admin operation also support other actions, please refer to api document for more actions
+4. each assignment will create a workflow, and each workflow include a lot works with status and actions.
+5. required data include: "assignment", "assignment.path", "assignment.assign_to", "assignment.works", "assignment.works.status", "assignment.works.actions", "assignment.works.actions.path"
 
-```JSON
+```JSON for create-assignment-start
 {
-    "page":"join-org",
-    "action":"apply-join",
-    "data":{
-        "org":"class1"
+    "operation": "assignment-admin",
+    "org": "class1",
+    "action": "create-assignment-start",
+    "data": {}
+}
+```
+
+```JSON for create-assignment-end
+{
+    "operation": "assignment-admin",
+    "org": "class1",
+    "action": "create-assignment-end",
+    "data": {
+        "assignment": {
+            "name": "homework1",
+            "path": "homework1",
+            "assign_to": "every_student",
+            "works": [
+                {
+                    "path": "update",
+                    "status": "assigned",
+                    "actions": [
+                        {
+                            "path": "update",
+                            "operation": "assignment-home",
+                            "users": [
+                                "assigned_user"
+                            ]
+                        },
+                        {
+                            "path": "complete",
+                            "operation": "assignment-home",
+                            "users": [
+                                "assigned_user"
+                            ]
+                        },
+                        {
+                            "path": "watch",
+                            "operation": "assignment-home",
+                            "users": [
+                                "student_parent",
+                                "self"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "path": "complete",
+                    "status": "updated",
+                    "actions": [
+                    	{
+                            "path": "update",
+                            "operation": "assignment-home",
+                            "users": [
+                                "assigned_user"
+                            ]
+                        },
+                        {
+                            "path": "complete",
+                            "operation": "assignment-home",
+                            "users": [
+                                "assigned_user"
+                            ]
+                        },
+                        {
+                            "path": "watch",
+                            "operation": "assignment-home",
+                            "users": [
+                                "student_parent",
+                                "self"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "status": "completed",
+                    "actions": [
+                        {
+                            "path": "confirm",
+                            "operation": "assignement-home",
+                            "users": [
+                                "self"
+                            ]
+                        },
+                        {
+                            "path": "end",
+                            "operation": "assignment-home",
+                            "users": [
+                                "self"
+                            ]
+                        },
+                        {
+                            "path": "watch",
+                            "operation": "assignment-home",
+                            "users": [
+                                "self"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "status": "confirmed",
+                    "actions": [
+                        {
+                            "path": "end",
+                            "operation": "assignment-home",
+                            "users": [
+                                "self"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "tasks": [
+                {
+                    "name": "homework1",
+                    "path": "homework1",
+                    "works": [
+                        {
+                            "status": "assigned"
+                        },
+                        {
+                            "status": "updated"
+                        },
+                        {
+                            "status": "completed"
+                        },
+                        {
+                            "status": "confirmed"
+                        },
+                        {
+                            "status": "end"
+                        }
+                    ],
+                    "position": 0
+                }
+            ]
+        }
     }
 }
 ```
@@ -511,103 +563,93 @@ please note that:
 **Response**:
 
 please note that: 
-1. emit id is the event id for listen notification created be join-org, org-user-admin operation user should use it to listen notification to it's operation
-2. this action will first create a channel for user2 who apply join org, then send notification from user2's channel to or-user-admin channel
+1. one assignment is created, teacher, student and parent will get notification to remind assignment
+2. each role has different actions in assignment
 
-```JSON
+```JSON for create-assignment-start
 {
-    "_id": "5c6cea471e7810c5a2fdb291",
-    "page": "join-org",
-    "action": "apply-join",
-    "data": {
-        "org": "class1"
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbee",
+        "path": "assignment-admin",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
+    },
+    "action": "create-assignment-start",
+    "user": {
+        "_id": "5cd37835d0d4c0408e22fbf9",
+        "email": "teacher1@example.com"
     },
     "result": {
-        "notification": {
-            "_id": "5c6cea471e7810c5a2fdb28e",
-            "path": "apply-join-org",
-            "tags": "apply-join-org",
-            "from_channel": {
-                "tags": [],
-                "_id": "5c6ce64cc26fd0c3b55dae44",
-                "scopes": [
-                    {
-                        "users": [],
-                        "pages": [
-                            "join-org"
-                        ],
-                        "owner": {
-                            "user": "user2@example.com"
-                        },
-                        "orgs": [],
-                        "roles": [],
-                        "permissions": [],
-                        "operations": []
-                    }
-                ],
-                "path": "page#join-org#user#user2@example.com",
-                "scopes_hash": "9652b21512c056c82c5f7ae67611fcabe7d18e34"
-            },
-            "to_channel": {
-                "tags": [],
-                "_id": "5c6cea361e7810c5a2fdb286",
-                "scopes": [
-                    {
-                        "users": [],
-                        "pages": [],
-                        "owner": {
-                            "operation": {
-                                "path": "org-user-admin",
-                                "org_path": "class1"
-                            }
-                        },
-                        "orgs": [],
-                        "roles": [],
-                        "permissions": [],
-                        "operations": []
-                    }
-                ],
-                "path": "#org#class3#operation#org-user-admin",
-                "scopes_hash": "32e157cc8f386befd5ed1b4274fef8a2e9153016"
-            },
-            "listen": "join-org",
-            "contents": [
-                {
-                    "_id": "5c6cea471e7810c5a2fdb290",
-                    "name": "message",
-                    "type": "string",
-                    "value": "apply-join-org, please process this request!"
-                },
-                {
-                    "_id": "5c6cea471e7810c5a2fdb28f",
-                    "name": "org",
-                    "type": "data.org",
-                    "value": {
-                        "_id": "5c6cea361e7810c5a2fdb281",
-                        "path": "class3"
-                    }
-                }
-            ],
-            "sender": {
-                "_id": "5c6ce5ebc26fd0c3b55dae42",
-                "email": "user2@example.com"
-            },
-            "createdAt": "2019-02-20T05:48:55.746Z",
-            "updatedAt": "2019-02-20T05:48:55.746Z",
-            "__v": 0
+        "assignment_data": {
+            "name": "give a name, option",
+            "path": "give path, option",
+            "description": "give some description, option"
         },
-        "emit": "notify-join-org-5c6cea361e7810c5a2fdb286"
-    },
-    "user": {
-        "_id": "5c6ce5ebc26fd0c3b55dae42",
-        "email": "user2@example.com"
-    },
-    "createdAt": "2019-02-20T05:48:55.752Z",
-    "updatedAt": "2019-02-20T05:48:55.752Z",
-    "__v": 0
+        "assigment_type_options": [
+            {
+                "name": "homework assignment",
+                "key": "assignment.school.class.homework",
+                "data": {
+                    "assign_to_options": [
+                        {
+                            "name": "every student",
+                            "key": "every_student"
+                        },
+                        {
+                            "name": "select student",
+                            "key": "select student"
+                        },
+                        {
+                            "name": "select users",
+                            "key": "select_users"
+                        },
+                        {
+                            "name": "select roles",
+                            "key": "select_roles"
+                        }
+                    ],
+                    "assignment_work_status_options": [
+                        "assigned",
+                        "updated",
+                        "confirmed"
+                    ],
+                    "assignment_work_action_options": [
+                        "update",
+                        "monitor",
+                        "confirm"
+                    ],
+                    "assignment_work_action_by_options": [
+                        "assigned_user",
+                        "select_student",
+                        "select_teacher",
+                        "select_user",
+                        "select_role"
+                    ]
+                }
+            }
+        ]
+    }
 }
 ```
 
+```JSON for create-assignment-start
+{
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbee",
+        "path": "assignment-admin",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
+    },
+    "action": "create-assignment-end",
+    "user": {
+        "_id": "5cd37835d0d4c0408e22fbf9",
+        "email": "teacher1@example.com"
+    },
+    "result": {
+        "workflows": []
+    }
+}
+```
 ## API For Checking Sent Notifications
 
 ### API Detail
