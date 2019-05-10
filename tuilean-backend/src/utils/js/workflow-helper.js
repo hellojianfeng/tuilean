@@ -575,7 +575,7 @@ module.exports = function(context, options) {
     }
 
     if (query.user_id || query.operation_id || query.org_id){
-      query.status = 'joined';
+      //query.status = 'joined';
       const finds = await workactionsService.find({query});
       for( const j of finds.data ) {
         await populateWork(j);
