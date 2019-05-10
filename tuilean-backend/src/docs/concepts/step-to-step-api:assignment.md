@@ -117,13 +117,6 @@ please note that:
         "path": "class1"
     },
     "result": {
-        "channels": {
-            "allow": [],
-            "joined": [],
-            "joining": [],
-            "inviting": [],
-            "rejected": []
-        },
         "_id": "5c6cea361e7810c5a2fdb281",
         "name": "class1",
         "type": {
@@ -632,7 +625,7 @@ please note that:
 }
 ```
 
-```JSON for create-assignment-start
+```JSON for create-assignment-end
 {
     "operation": {
         "_id": "5cd377bfd0d4c0408e22fbee",
@@ -650,12 +643,12 @@ please note that:
     }
 }
 ```
-## API For Checking Sent Notifications
+## API For student show assignments and update assignment
 
 ### API Detail
-before access api, please add user token into header of Authorization
+before access api, please add user token into header of Authorization.
 
-**URL** : http://host/notify
+**URL** : http://host/do-operation
 
 **Method**: POST
 
@@ -663,286 +656,742 @@ before access api, please add user token into header of Authorization
 
 please note that:
 
-1. action must be 'find'
-2. listen property and channel property under data are required. here means user2@example.com in page of join-org is find sent notifications.
-3. can provide scopes, path or both for find a channel which is sent notifications
+1. operation must be 'assignment-home'
+2. action as "show-works" to list all works for student, actually teacher and parent can all find works by "show-works"
+3. "do-work" is use to perform work action.
 
-```JSON
+***Request for show-works by student***
+```JSON 
 {
-    "action":"find",
-    "data":{
-        "sent":{
-            "listen":"join-org",
-            "channel":{
-                "scopes":[
-                    {
-                        "owner":{
-                        "user":"user2@example.com"
-                    },
-                    "pages":["join-org"]
-                    }
-                ]
-            }
-        }
-    }
-}
-```
-or
-```JSON
-{
-    "action":"find",
-    "data":{
-        "sent":{
-            "listen":"join-org",
-            "channel":{
-                "path":"page#join-org#user#user2@example.com"
-            }
-        }
-    }
+    "operation": "assignment-home",
+    "org": "class1",
+    "action": "show-works"
 }
 ```
 
-**Response**:
-
-please note that: 
-1. emit id is the event id for listen notification created be join-org, org-user-admin operation user should use it to listen notification to it's operation
-2. this action will first create a channel for user2 who apply join org, then send notification from user2's channel to or-user-admin channel
-
-```JSON
+***Response for show-works by student***
+```JSON 
 {
-    "url": "/notify",
-    "method": "POST",
-    "action": "find",
-    "user": {
-        "_id": "5c6deba80e758dd951c0aed6",
-        "email": "user2@example.com"
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbef",
+        "path": "assignment-home",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
     },
-    "data": {
-        "sent": {
-            "listen": "join-org",
-            "channel": {
-                "path": "page#join-org#user#user2@example.com"
-            }
-        }
+    "action": "show-works",
+    "user": {
+        "_id": "5cd377e1d0d4c0408e22fbf5",
+        "email": "student1@example.com"
     },
     "result": {
-        "sent_notifications": [
+        "current_works": [
             {
-                "_id": "5c6debcf0e758dd951c0aed8",
-                "path": "apply-join-org",
-                "tags": "apply-join-org",
-                "from_channel": {
-                    "tags": [],
-                    "_id": "5c6debcf0e758dd951c0aed7",
-                    "scopes": [
-                        {
-                            "users": [],
-                            "pages": [
-                                "join-org"
-                            ],
-                            "owner": {
-                                "user": "user2@example.com"
-                            },
-                            "orgs": [],
-                            "roles": [],
-                            "permissions": [],
-                            "operations": []
-                        }
-                    ],
-                    "path": "page#join-org#user#user2@example.com",
-                    "scopes_hash": "9652b21512c056c82c5f7ae67611fcabe7d18e34"
+                "_id": "5cd3806b134d11414671d09c",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
                 },
-                "to_channel": {
-                    "tags": [],
-                    "_id": "5c6deb8a0e758dd951c0aec7",
-                    "scopes": [
-                        {
-                            "users": [],
-                            "pages": [],
-                            "owner": {
-                                "operation": {
-                                    "path": "org-user-admin",
-                                    "org_path": "class1"
-                                }
-                            },
-                            "orgs": [],
-                            "roles": [],
-                            "permissions": [],
-                            "operations": []
-                        }
-                    ],
-                    "path": "org#class1#operation#org-user-admin",
-                    "scopes_hash": "42f5a915280bc319a7c5fd21ab45a614ebb52fc2"
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
                 },
-                "listen": "join-org",
-                "contents": [
-                    {
-                        "_id": "5c6debcf0e758dd951c0aeda",
-                        "name": "message",
-                        "type": "string",
-                        "value": "apply-join-org, please process this request!"
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "update"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d090",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
                     },
-                    {
-                        "_id": "5c6debcf0e758dd951c0aed9",
-                        "name": "org",
-                        "type": "data.org",
-                        "value": {
-                            "_id": "5c6deb8a0e758dd951c0aec2",
-                            "path": "class1"
-                        }
-                    }
-                ],
-                "sender": {
-                    "_id": "5c6deba80e758dd951c0aed6",
-                    "email": "user2@example.com"
+                    "path": "update",
+                    "status": "assigned"
+                }
+            },
+            {
+                "_id": "5cd3806b134d11414671d09d",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
                 },
-                "createdAt": "2019-02-21T00:07:43.178Z",
-                "updatedAt": "2019-02-21T00:07:43.178Z",
-                "__v": 0
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "complete"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d090",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
+                    },
+                    "path": "update",
+                    "status": "assigned"
+                }
+            }
+        ],
+        "previous_works": [],
+        "history_works": []
+    }
+}
+```
+
+***explain to request and response of student show-works***
+1. please refer to create-assignment-end request, can find one work in works like below json, it means in a update work, when work status is assigned, assigned user(here is student) can execute update action, meanwhile assigned user can execute complete action and student parent and teacher (here is self) can execute watch action
+
+```JSON 
+{
+    "works": 
+    [
+        {
+            "path": "update",
+            "status": "assigned",
+            "actions": [
+                {
+                    "path": "update",
+                    "operation": "assignment-home",
+                    "users": [
+                        "assigned_user"
+                    ]
+                },
+                {
+                    "path": "complete",
+                    "operation": "assignment-home",
+                    "users": [
+                        "assigned_user"
+                    ]
+                },
+                {
+                    "path": "watch",
+                    "operation": "assignment-home",
+                    "users": [
+                        "student_parent",
+                        "self"
+                    ]
+                }
+            ]
+        }
+    ]
+}
+```
+2. because student is assigned two action, so show-works response list two works, one have action of update and one has action of complete. 
+
+***do-work request for update assignment by student***
+```JSON 
+{
+    "operation": "assignment-home",
+    "org": "class1",
+    "action": "do-work",
+    "data": {
+        "work": {
+            "_id": "5cd3806b134d11414671d09c",
+            "workflow": {
+                "_id": "5cd3806a134d11414671d08c",
+                "type": "class-assignment",
+                "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+            },
+            "status": "joined",
+            "operation": {
+                "_id": "5cd377bfd0d4c0408e22fbef",
+                "path": "assignment-home",
+                "org_path": "class1"
+            },
+            "user": {
+                "_id": "5cd377e1d0d4c0408e22fbf5",
+                "email": "student1@example.com"
+            },
+            "action": {
+                "path": "update"
+            },
+            "org_id": "5cd377a7d0d4c0408e22fbe1",
+            "org_path": "class1",
+            "work": {
+                "active": "true",
+                "_id": "5cd3806a134d11414671d090",
+                "executed": {
+                    "workactions": [],
+                    "users": []
+                },
+                "path": "update",
+                "status": "assigned"
+            }
+        }
+    }
+}
+```
+
+***Response of do-work for update by student***
+```JSON
+{
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbef",
+        "path": "assignment-home",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
+    },
+    "action": "do-work",
+    "user": {
+        "_id": "5cd377e1d0d4c0408e22fbf5",
+        "email": "student1@example.com"
+    },
+    "result": {
+        "current_works": [
+            {
+                "_id": "5cd3806b134d11414671d09f",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "update"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d08f",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
+                    },
+                    "path": "complete",
+                    "status": "updated"
+                }
+            },
+            {
+                "_id": "5cd3806b134d11414671d0a0",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "complete"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d08f",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
+                    },
+                    "path": "complete",
+                    "status": "updated"
+                }
+            }
+        ],
+        "previous_works": [
+            {
+                "_id": "5cd3806b134d11414671d09c",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "update"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d090",
+                    "executed": {
+                        "workactions": [
+                            {
+                                "_id": "5cd3806b134d11414671d09c"
+                            }
+                        ],
+                        "users": [
+                            {
+                                "_id": "5cd377e1d0d4c0408e22fbf5",
+                                "email": "student1@example.com"
+                            }
+                        ]
+                    },
+                    "path": "update",
+                    "status": "assigned"
+                }
+            }
+        ],
+        "history_works": []
+    }
+}
+```
+
+***explain to do-work request and response***
+1. if want update assignment, should get one work from show-works response and find one item with action of update and then add it to do-work action data as showing in do-work request. after run request, backend will update assignment status by some data(here only change status, not provide additional data, later can upload some picture and then update status with some comments)
+2. in response, can find current_works. current_works list pending works student can perform, according to assignment definition when create assignment, after update assignment, work status change to updated and student can continue to update or complete assigment, so can find two current_works here, but please note that works status change to updated and before work status is assigned(in assigned status, student can also do update or complete actio,).
+3. in response, can find previous_works. previous_works list just completed works. please note that previous work status is assigned.
+4. student can do complete work as any time, according to assignment definition (please refer to create-assignment-end action request), once complete, student should have no current works already and parent and teacher can watch assignment, finally teacher can end assignment.
+
+***request of do-work for complete by student***
+```JSON
+{
+    "operation": "assignment-home",
+    "org": "class1",
+    "action": "do-work",
+    "data": {
+        "work": {
+            "_id": "5cd3806b134d11414671d0a0",
+            "workflow": {
+                "_id": "5cd3806a134d11414671d08c",
+                "type": "class-assignment",
+                "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+            },
+            "status": "joined",
+            "operation": {
+                "_id": "5cd377bfd0d4c0408e22fbef",
+                "path": "assignment-home",
+                "org_path": "class1"
+            },
+            "user": {
+                "_id": "5cd377e1d0d4c0408e22fbf5",
+                "email": "student1@example.com"
+            },
+            "action": {
+                "path": "complete"
+            },
+            "org_id": "5cd377a7d0d4c0408e22fbe1",
+            "org_path": "class1",
+            "work": {
+                "active": "true",
+                "_id": "5cd3806a134d11414671d08f",
+                "executed": {
+                    "workactions": [],
+                    "users": []
+                },
+                "path": "complete",
+                "status": "updated"
+            }
+        }
+    }
+}
+```
+
+***response of do-work for complete by student***
+```JSON
+{
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbef",
+        "path": "assignment-home",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
+    },
+    "action": "do-work",
+    "user": {
+        "_id": "5cd377e1d0d4c0408e22fbf5",
+        "email": "student1@example.com"
+    },
+    "result": {
+        "current_works": [],
+        "previous_works": [
+            {
+                "_id": "5cd3806b134d11414671d0a0",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "complete"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d08f",
+                    "executed": {
+                        "workactions": [
+                            {
+                                "_id": "5cd3806b134d11414671d0a0"
+                            }
+                        ],
+                        "users": [
+                            {
+                                "_id": "5cd377e1d0d4c0408e22fbf5",
+                                "email": "student1@example.com"
+                            }
+                        ]
+                    },
+                    "path": "complete",
+                    "status": "updated"
+                }
+            }
+        ],
+        "history_works": [
+            {
+                "_id": "5cd3806b134d11414671d09c",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd377e1d0d4c0408e22fbf5",
+                    "email": "student1@example.com"
+                },
+                "action": {
+                    "path": "update"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d090",
+                    "executed": {
+                        "workactions": [
+                            {
+                                "_id": "5cd3806b134d11414671d09c"
+                            }
+                        ],
+                        "users": [
+                            {
+                                "_id": "5cd377e1d0d4c0408e22fbf5",
+                                "email": "student1@example.com"
+                            }
+                        ]
+                    },
+                    "path": "update",
+                    "status": "assigned"
+                }
             }
         ]
     }
 }
 ```
 
-## API For Checking Received Notifications
-Received notification can be checked at two point for org-user-admin operation (here as example)
-1. point 1: when open org notification UI in client, it should call this API to find received notifications
-2. when some user is applying org, it will emit an event, in org notification client, it should listen notification event id and get latest notification. 
-3. commonly should listen 'type'+listen+channel_id event id, for org-user-admin operation channel, listen event id should like 'notify-join-org-5c6deb8a0e758dd951c0aec7'
+***response of show-work by teacher***
 
-### API Detail
-before access api, please add user token into header of Authorization
-
-**URL** : http://host/notify
-
-**Method**: POST
-
-**POST Data**:
-
-please note that:
-
-1. action must be 'find'
-2. listen property and channel property under data are required. here means operation org-user-admin is getting received message.
-3. can provide scopes, path or both for find a channel which is receiving notifications
-4. can provide $limit or $skip for receiving notifications
+just login as teacher and run show-works action(refer to above show-works action request), please note that teacher can perform end action in current_works. meanwhile please note that teacher can watch other assignment (please refer to create-assignment to know two assignments are create for two student in this case, and one is completed and teacher can end assignment and second one is assigned status and teacher can watch)
 
 ```JSON
 {
-    "action":"find",
-    "data":{
-        "received":{
-            "$limit":10,
-            "$skip": 0,
-            "listen":"join-org",
-            "channel":{
-                "path":"org#class1#operation#org-user-admin"
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbef",
+        "path": "assignment-home",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
+    },
+    "action": "show-works",
+    "user": {
+        "_id": "5cd37835d0d4c0408e22fbf9",
+        "email": "teacher1@example.com"
+    },
+    "result": {
+        "current_works": [
+            {
+                "_id": "5cd3806b134d11414671d0a3",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd37835d0d4c0408e22fbf9",
+                    "email": "teacher1@example.com"
+                },
+                "action": {
+                    "path": "end"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d08e",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
+                    },
+                    "status": "completed"
+                }
+            },
+            {
+                "_id": "5cd3806b134d11414671d0a4",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd37835d0d4c0408e22fbf9",
+                    "email": "teacher1@example.com"
+                },
+                "action": {
+                    "path": "watch"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d08e",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
+                    },
+                    "status": "completed"
+                }
+            },
+            {
+                "_id": "5cd3806b134d11414671d0b9",
+                "workflow": {
+                    "_id": "5cd3806b134d11414671d0a7",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e6d0d4c0408e22fbf6"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd37835d0d4c0408e22fbf9",
+                    "email": "teacher1@example.com"
+                },
+                "action": {
+                    "path": "watch"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806b134d11414671d0ab",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
+                    },
+                    "path": "update",
+                    "status": "assigned"
+                }
+            }
+        ],
+        "previous_works": [],
+        "history_works": []
+    }
+}
+```
+
+***request of do-work for end by teacher***
+```JSON
+{
+    "operation": "assignment-home",
+    "org": "class1",
+    "action": "do-work",
+    "data": {
+        "work": {
+            "_id": "5cd3806b134d11414671d0a3",
+            "workflow": {
+                "_id": "5cd3806a134d11414671d08c",
+                "type": "class-assignment",
+                "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+            },
+            "status": "joined",
+            "operation": {
+                "_id": "5cd377bfd0d4c0408e22fbef",
+                "path": "assignment-home",
+                "org_path": "class1"
+            },
+            "user": {
+                "_id": "5cd37835d0d4c0408e22fbf9",
+                "email": "teacher1@example.com"
+            },
+            "action": {
+                "path": "end"
+            },
+            "org_id": "5cd377a7d0d4c0408e22fbe1",
+            "org_path": "class1",
+            "work": {
+                "active": "true",
+                "_id": "5cd3806a134d11414671d08e",
+                "executed": {
+                    "workactions": [],
+                    "users": []
+                },
+                "status": "completed"
             }
         }
     }
 }
 ```
 
-**Response**:
-
-please note that: 
-1. emit id is the event id for listen notification created be join-org, org-user-admin operation user should use it to listen notification to it's operation, emit id commonly is 'notify-listen-channel_id'
-
+***response of do-work for end assignment by teacher***
 ```JSON
 {
-    "url": "/notify",
-    "method": "POST",
-    "action": "find",
-    "user": {
-        "_id": "5c6deb6a0e758dd951c0aec0",
-        "email": "user1@example.com"
+    "operation": {
+        "_id": "5cd377bfd0d4c0408e22fbef",
+        "path": "assignment-home",
+        "org_id": "5cd377a7d0d4c0408e22fbe1",
+        "org_path": "class1"
     },
-    "data": {
-        "received": {
-            "$limit": 10,
-            "$skip": 0,
-            "listen": "join-org",
-            "channel": {
-                "path": "org#class1#operation#org-user-admin"
-            }
-        }
+    "action": "do-work",
+    "user": {
+        "_id": "5cd37835d0d4c0408e22fbf9",
+        "email": "teacher1@example.com"
     },
     "result": {
-        "received_notifications": [
+        "current_works": [
             {
-                "_id": "5c6debcf0e758dd951c0aed8",
-                "path": "apply-join-org",
-                "tags": "apply-join-org",
-                "from_channel": {
-                    "tags": [],
-                    "_id": "5c6debcf0e758dd951c0aed7",
-                    "scopes": [
-                        {
-                            "users": [],
-                            "pages": [
-                                "join-org"
-                            ],
-                            "owner": {
-                                "user": "user2@example.com"
-                            },
-                            "orgs": [],
-                            "roles": [],
-                            "permissions": [],
-                            "operations": []
-                        }
-                    ],
-                    "path": "page#join-org#user#user2@example.com",
-                    "scopes_hash": "9652b21512c056c82c5f7ae67611fcabe7d18e34"
+                "_id": "5cd3806b134d11414671d0b9",
+                "workflow": {
+                    "_id": "5cd3806b134d11414671d0a7",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e6d0d4c0408e22fbf6"
                 },
-                "to_channel": {
-                    "tags": [],
-                    "_id": "5c6deb8a0e758dd951c0aec7",
-                    "scopes": [
-                        {
-                            "users": [],
-                            "pages": [],
-                            "owner": {
-                                "operation": {
-                                    "path": "org-user-admin",
-                                    "org_path": "class1"
-                                }
-                            },
-                            "orgs": [],
-                            "roles": [],
-                            "permissions": [],
-                            "operations": []
-                        }
-                    ],
-                    "path": "org#class1#operation#org-user-admin",
-                    "scopes_hash": "42f5a915280bc319a7c5fd21ab45a614ebb52fc2"
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
                 },
-                "listen": "join-org",
-                "contents": [
-                    {
-                        "_id": "5c6debcf0e758dd951c0aeda",
-                        "name": "message",
-                        "type": "string",
-                        "value": "apply-join-org, please process this request!"
+                "user": {
+                    "_id": "5cd37835d0d4c0408e22fbf9",
+                    "email": "teacher1@example.com"
+                },
+                "action": {
+                    "path": "watch"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806b134d11414671d0ab",
+                    "executed": {
+                        "workactions": [],
+                        "users": []
                     },
-                    {
-                        "_id": "5c6debcf0e758dd951c0aed9",
-                        "name": "org",
-                        "type": "data.org",
-                        "value": {
-                            "_id": "5c6deb8a0e758dd951c0aec2",
-                            "path": "class1"
-                        }
-                    }
-                ],
-                "sender": {
-                    "_id": "5c6deba80e758dd951c0aed6",
-                    "email": "user2@example.com"
-                },
-                "createdAt": "2019-02-21T00:07:43.178Z",
-                "updatedAt": "2019-02-21T00:07:43.178Z",
-                "__v": 0
+                    "path": "update",
+                    "status": "assigned"
+                }
             }
-        ]
+        ],
+        "previous_works": [
+            {
+                "_id": "5cd3806b134d11414671d0a3",
+                "workflow": {
+                    "_id": "5cd3806a134d11414671d08c",
+                    "type": "class-assignment",
+                    "path": "assign_to_5cd377e1d0d4c0408e22fbf5"
+                },
+                "status": "joined",
+                "operation": {
+                    "_id": "5cd377bfd0d4c0408e22fbef",
+                    "path": "assignment-home",
+                    "org_path": "class1"
+                },
+                "user": {
+                    "_id": "5cd37835d0d4c0408e22fbf9",
+                    "email": "teacher1@example.com"
+                },
+                "action": {
+                    "path": "end"
+                },
+                "org_id": "5cd377a7d0d4c0408e22fbe1",
+                "org_path": "class1",
+                "work": {
+                    "active": "true",
+                    "_id": "5cd3806a134d11414671d08e",
+                    "executed": {
+                        "workactions": [
+                            {
+                                "_id": "5cd3806b134d11414671d0a3"
+                            }
+                        ],
+                        "users": [
+                            {
+                                "_id": "5cd37835d0d4c0408e22fbf9",
+                                "email": "teacher1@example.com"
+                            }
+                        ]
+                    },
+                    "status": "completed"
+                }
+            }
+        ],
+        "history_works": []
     }
 }
 ```
