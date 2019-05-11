@@ -4,9 +4,15 @@
 // for more of what you can do here.
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
-  const { Schema } = mongooseClient;
+  const {
+    Schema
+  } = mongooseClient;
   const schemas = require('./schemas')(app);
-  const { progress, compact_workflow, compact_work } = schemas;
+  const {
+    progress,
+    compact_workflow,
+    compact_work
+  } = schemas;
   const workactions = new Schema({
     workflow: compact_workflow,
     work: compact_work,
@@ -14,16 +20,33 @@ module.exports = function (app) {
       path: String,
       status: String,
       progress,
-      data: { type: Schema.Types.Mixed }
+      data: {
+        type: Schema.Types.Mixed
+      }
     },
     page: String,
     status: String,
-    org_id: { type: Schema.Types.ObjectId },
+    join: {
+      type: String,
+      enum: ['joined', 'pending', 'rejected'],
+      default: 'joined'
+    },
+    org_id: {
+      type: Schema.Types.ObjectId
+    },
     org_path: String,
-    user_id: { type: Schema.Types.ObjectId },
-    operation_id: { type: Schema.Types.ObjectId },
-    role_id: { type: Schema.Types.ObjectId },
-    data: { type: Schema.Types.Mixed }
+    user_id: {
+      type: Schema.Types.ObjectId
+    },
+    operation_id: {
+      type: Schema.Types.ObjectId
+    },
+    role_id: {
+      type: Schema.Types.ObjectId
+    },
+    data: {
+      type: Schema.Types.Mixed
+    }
   }, {
     timestamps: true
   });

@@ -72,10 +72,14 @@ module.exports = function(context, options) {
             oWorkflow.previous = current;
             oWorkflow.current = next;
 
+            if(next.status && next.status === 'end'){
+              oWorkflow.status = 'end';
+            }
+
             await workflowService.patch(
               oWorkflow._id,
               {
-                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current
+                history: oWorkflow.history,previous:oWorkflow.previous, current:oWorkflow.current,status: oWorkflow.status
               }
             );
             //by default create a notify for workflow.next action
@@ -382,6 +386,7 @@ module.exports = function(context, options) {
               const operation = action.operation && await contextParser.getOperation(action.operation);
               const query = {
                 'workflow._id': workflow && workflow._id,
+                'workflow.status': workflow && workflow.status,
                 'work._id': work && work._id,
                 'work.status': work && work.status,
                 user_id: user && user._id
@@ -395,11 +400,11 @@ module.exports = function(context, options) {
               const finds = await workactionsService.find({query});
               if(finds && finds.total < 1){
                 const createData = {
-                  workflow: _.pick(workflow, ['_id','type','path']),
+                  workflow: _.pick(workflow, ['_id','type','path','status']),
                   work: _.pick(work, ['_id','path','status']),
                   action: action && _.pick(action,['path','status','progress']),
                   user_id: user && user._id,
-                  status: 'joined'
+                  join: 'joined'
                 };
                 if(action.page){
                   createData.page = action.page;
@@ -422,6 +427,7 @@ module.exports = function(context, options) {
             if (operation && operation._id){
               const query = {
                 'workflow._id': workflow._id,
+                'workflow.status': workflow.status,
                 'work._id': work._id,
                 'work.status': work.status,
                 operation_id: operation._id
@@ -433,13 +439,13 @@ module.exports = function(context, options) {
               if(finds && finds.total === 0){
                 const createdAction = await workactionsService.create(
                   {
-                    workflow: _.pick(workflow, ['_id','type','path']),
+                    workflow: _.pick(workflow, ['_id','type','path','status']),
                     work: _.pick(work, ['_id','path','status']),
                     action: action && _.pick(action,['path','status','progress']),
                     operation_id: operation._id,
                     org_id: operation.org_id,
                     org_path: operation.org_path,
-                    status: 'joined'
+                    join: 'joined'
                   });
                 results.push({createdOperationAction: createdAction});
               } else {
@@ -503,7 +509,14 @@ module.exports = function(context, options) {
         const user = j.user_id && await userService.get(j.user_id);
 
         const workflow = await getWorkflow(j.workflow);
-        const theWork = { _id: j._id, workflow: j.workflow, status: j.status};
+        if(workflow.status !== j.workflow.status){
+          j.workflow.status = workflow.status;
+          await workactionsService.patch(j._id, {workflow: j.workflow});
+          if (j.workflow.status !== 'active'){
+            return;
+          }
+        }
+        const theWork = { _id: j._id, workflow: j.workflow, join: j.join};
         if(operation){
           theWork.operation = _.pick(operation,['_id','path','org_path']);
         }
@@ -574,8 +587,10 @@ module.exports = function(context, options) {
       query['workflow.type'] = workflow_type;
     }
 
+    query['workflow.status'] = 'active';
+
     if (query.user_id || query.operation_id || query.org_id){
-      query.status = 'joined';
+      query.join = 'joined';
       const finds = await workactionsService.find({query});
       for( const j of finds.data ) {
         await populateWork(j);

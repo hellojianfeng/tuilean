@@ -102,6 +102,7 @@ module.exports = function (app) {
     _id: Schema.Types.ObjectId,
     type: String,
     path: String,
+    status: String,
     data: { type: Schema.Types.Mixed }
   },{_id: false});
 
