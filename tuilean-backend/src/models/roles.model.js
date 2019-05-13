@@ -5,19 +5,20 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
-  const theSchema = new Schema({
-    _id: { type: Schema.Types.ObjectId },
-    path: { type: String },
-    include: {
-      children: [{ path: { type: String }, recursive: { type: Boolean } }],
-      parent: [{ path: { type: String }, recursive: { type: Boolean } }],
-    },
-    exclude: {
-      children: [{ path: { type: String }, recursive: { type: Boolean } }],
-      parent: [{ path: { type: String }, recursive: { type: Boolean } }],
-    },
-    data: { type: Schema.Types.Mixed }
-  });
+  const { compact_org_obj } = require('./schemas')(app);
+  // const theSchema = new Schema({
+  //   _id: { type: Schema.Types.ObjectId },
+  //   path: { type: String },
+  //   include: {
+  //     children: [{ path: { type: String }, recursive: { type: Boolean } }],
+  //     parent: [{ path: { type: String }, recursive: { type: Boolean } }],
+  //   },
+  //   exclude: {
+  //     children: [{ path: { type: String }, recursive: { type: Boolean } }],
+  //     parent: [{ path: { type: String }, recursive: { type: Boolean } }],
+  //   },
+  //   data: { type: Schema.Types.Mixed }
+  // });
   const roles = new Schema({
     name: { type: String, required: true },
     display_name: { type: String },
@@ -28,8 +29,8 @@ module.exports = function (app) {
     status: {
       join_org: { type: String, enum: ['joinable', 'default_join_role'], }
     },
-    permissions: [ theSchema ],
-    operations: [ theSchema ],
+    permissions: [ compact_org_obj ],
+    operations: [ compact_org_obj ],
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true
