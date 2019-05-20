@@ -11,6 +11,7 @@ module.exports = async function (context, options = {}) {
   const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
   //const userHelper = require('../../../utils/js/user-helper')(context,options);
   const orgHelper = require('../../../utils/js/org-helper')(context,options);
+  //const assignmentHelper = require('../assignmentHelper')(context,options);
 
   const _ = require('lodash');
 
@@ -117,6 +118,7 @@ module.exports = async function (context, options = {}) {
         const workflowData = _.pick(assignment_data,['name','description']);
         workflowData.type = assignment_data.type;
         const students = await orgHelper.findOrgUsers({role:'student'});
+        //const students = await assignmentHelper.populateAssignments({assig_to: {role: 'student'}});
         for(const student of students){
           const workflowData = _.pick(assignment_data,['name','description','works','tasks']);
           workflowData.type = 'class-assignment';

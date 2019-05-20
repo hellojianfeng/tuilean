@@ -5,31 +5,17 @@
 module.exports = function (app) {
   const mongooseClient = app.get('mongooseClient');
   const { Schema } = mongooseClient;
-  const { compact_org_obj } = require('./schemas')(app);
-  // const theSchema = new Schema({
-  //   _id: { type: Schema.Types.ObjectId },
-  //   path: { type: String },
-  //   include: {
-  //     children: [{ path: { type: String }, recursive: { type: Boolean } }],
-  //     parent: [{ path: { type: String }, recursive: { type: Boolean } }],
-  //   },
-  //   exclude: {
-  //     children: [{ path: { type: String }, recursive: { type: Boolean } }],
-  //     parent: [{ path: { type: String }, recursive: { type: Boolean } }],
-  //   },
-  //   data: { type: Schema.Types.Mixed }
-  // });
-  const roles = new Schema({
+  const { compact_user, compact_org_obj} = require('./schemas')(app);
+  const groups = new Schema({
     name: { type: String, required: true },
     display_name: { type: String },
     description: { type: String },
-    tags: [String],
     path: { type: String, required: true }, // dot sperated string, for example, company1#department1#office1, default is same as name
     org_id: { type: Schema.Types.ObjectId, required: true  },
     org_path: { type: String, required: true  },
-    status: {
-      join_org: { type: String, enum: ['joinable', 'default_join_role'], }
-    },
+    join: { type: String, enum: ['joinable', 'auto_join','approvable']},
+    users: [ compact_user ],
+    roles: [ compact_org_obj ],
     permissions: [ compact_org_obj ],
     operations: [ compact_org_obj ],
     data: { type: Schema.Types.Mixed }
@@ -40,5 +26,5 @@ module.exports = function (app) {
   //roles.index({ path: 1, org_id: 1 },  { unique: true });
   //roles.index({ path: 1, org_path: 1 },  { unique: true });
 
-  return mongooseClient.model('roles', roles);
+  return mongooseClient.model('groups', groups);
 };
