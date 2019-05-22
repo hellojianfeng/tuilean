@@ -11,7 +11,7 @@ module.exports = async function (context, options = {}) {
   const workflowHelper = require('../../../utils/js/workflow-helper')(context,options);
   //const userHelper = require('../../../utils/js/user-helper')(context,options);
   const orgHelper = require('../../../utils/js/org-helper')(context,options);
-  //const assignmentHelper = require('../assignmentHelper')(context,options);
+  const assignmentHelper = require('../assignmentHelper')(context,options);
 
   const _ = require('lodash');
 
@@ -131,28 +131,35 @@ module.exports = async function (context, options = {}) {
               if (workData && workData.actions){
                 for(const action of workData.actions){
                   const theAction = Object.assign({},action);
+                  let newActionUsers = [];
                   if(theAction.users){
                     if (typeof theAction.users === 'string'){
                       theAction.users = [theAction.users];
                     }
-                    theAction.users = theAction.users.map ( u => {
+                    for ( const u of theAction.users) {
                       if (u === 'assigned_user'){
-                        return student.email;
+                        newActionUsers.push(student.email);
                       }
                       if (u === 'self'){
-                        return context.params.user.email;
+                        newActionUsers.push(context.params.user.email);
                       }
                       if (u === 'student_parent'){
                         // todo: find student parent and add to action.users
-                        return;
+                        const parents = await assignmentHelper.findStudentParent(student);
+                        parents.map ( p => {
+                          if (p && p.email){
+                            newActionUsers.push(p.email);
+                          }
+                        });
                       }
                       if(validateEmail(u)){
-                        return u;
+                        //do nothing
+                        newActionUsers.push(u);
                       }
-                    });
+                    }
                   }
-                  theAction.users = _.compact(theAction.users);
-                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [theAction]}});
+                  newActionUsers = _.compact(newActionUsers);
+                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [newActionUsers]}});
                 }
               }
             }

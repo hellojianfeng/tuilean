@@ -30,18 +30,12 @@ module.exports = function(context, options) {
     if (student && student.email){
       const org = await contextParser.getCurrentOrg();
       const query = {
-        'role.path':'parent',
-        'role.org_path': org.path,
-        '$and':[
-          {
-            'tags':student.email
-          },
-          {
-            'tags':'children'
-          }
-        ]
+        'roles.path':'parent',
+        'roles.org_path': org.path,
+        'roles.data.children.email':student.email
       };
-      return await userService.find({query});
+      const finds = await userService.find({query});
+      return finds && finds.data || [];
     }
     return [];
   };
