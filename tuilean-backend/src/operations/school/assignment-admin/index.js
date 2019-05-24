@@ -159,7 +159,8 @@ module.exports = async function (context, options = {}) {
                     }
                   }
                   newActionUsers = _.compact(newActionUsers);
-                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [newActionUsers]}});
+                  theAction.users = newActionUsers;
+                  await workflowHelper.addWorkactions({workflow,work: {status: workData.status, actions: [theAction]}});
                 }
               }
             }

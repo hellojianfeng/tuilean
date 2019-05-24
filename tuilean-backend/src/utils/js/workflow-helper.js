@@ -10,7 +10,8 @@ module.exports = function(context, options) {
 
   const next = async (options = {}) => {
     const results = [];
-    const oWorkflow = options && options.workflow && await getWorkflow(options.workflow);
+    const workaction = options && options.work || options && options.current;
+    const oWorkflow = options && options.workflow && await getWorkflow(options.workflow) || workaction && await getWorkflow(workaction.workflow) ;
     if (oWorkflow){
       const currentData = options && options.current;
       const nextData = options && options.next || options;
@@ -63,8 +64,8 @@ module.exports = function(context, options) {
           if(allowNext && oWorkflow){
             next.data = nextData && nextData.data;
             current.executed.users.push(context.params.user);
-            if(options.workaction){
-              current.executed.workactions.push(options.workaction);
+            if(workaction){
+              current.executed.workactions.push(workaction);
             }
             if(oWorkflow.history && oWorkflow.previous){
               oWorkflow.history.push(oWorkflow.previous);
