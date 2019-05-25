@@ -7,6 +7,7 @@ module.exports = function(context, options) {
   const operationService = context.app.service('operations');
   const userService = context.app.service('users');
   const workactionsService = context.app.service('workactions');
+  const commentHelper = require('./comment-helper')(context,options);
 
   const next = async (options = {}) => {
     const results = [];
@@ -518,6 +519,7 @@ module.exports = function(context, options) {
           }
         }
         const theWork = { _id: j._id, workflow: j.workflow, join: j.join};
+        theWork.comments = await commentHelper.findComments({owner:{workflow_id: j.workflow._id, work_id: j.work._id}});
         if(operation){
           theWork.operation = _.pick(operation,['_id','path','org_path']);
         }
