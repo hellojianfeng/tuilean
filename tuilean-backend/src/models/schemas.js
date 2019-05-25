@@ -9,7 +9,8 @@ module.exports = function (app) {
     _id: {type: Schema.Types.ObjectId},
     path: String,
     org_id: {type: Schema.Types.ObjectId},
-    org_path: String
+    org_path: String,
+    data: { type: Schema.Types.Mixed }
   }, { _id: false });
   // const userObj = new Schema({
   //   _id: {type: Schema.Types.ObjectId},
@@ -102,6 +103,7 @@ module.exports = function (app) {
     _id: Schema.Types.ObjectId,
     type: String,
     path: String,
+    status: String,
     data: { type: Schema.Types.Mixed }
   },{_id: false});
 

@@ -38,8 +38,7 @@ module.exports = function (app) {
     previous: workSchema,
     current: workSchema,
     next: workSchema,
-    status: String,
-    active: {type: String, enum:['true','cancel','end'], default: 'true'},
+    status: { type: String, enum: ['active','pending','end'], default:'active'},
     tasks: [
       {
         path: String,

@@ -54,46 +54,24 @@ module.exports = async function (context, options = {}) {
   /**
      * input:
      */
-  if (action === 'add-user-role' || action === 'add-org-user'){
-    const result = {};
-    let {role,roles,user,everyone_role} = await contextParser.parse();
-    if(!user){
-      context.result = await buildResult.page({error: 500, message:'use is not exist! please specify user in operation data'});
-      return context;
+  if (action === 'add-user-role'){
+    const user = context.data.data.user || context.params.user;
+    if(context.data.data.role){
+      return context.result = await buildResult.operation(await userHelper.add_user_role({role: context.data.data.role, user}));
     }
-    if (role){
-      roles.push(role);
+    if(context.data.data.roles){
+      const result = [];
+      for(const r of context.data.data.roles){
+        result.push(await userHelper.add_user_role({role: r, user}));
+      }
+      return await buildResult.operation(result);
     }
-    roles = _.uniqBy(roles, r => { return r.path;});
+    return await buildResult.operation({error: 301, message:'fail to add user role, please check input!'});
+  }
 
-    if (roles.length === 0){
-      roles.push(everyone_role);
-    }
-
-    const user_roles = await contextParser.getOrgUserRoles({user});
-
-    if(user && roles.length > 0){
-      roles = roles.concat(user_roles);
-      roles = _.uniqBy(roles, r => {
-        return r.path;
-      });
-
-      user.roles = roles.map ( r => {
-        return {
-          _id: r._id,
-          path: r.path,
-          org_id: r.org_id,
-          org_path: r.org_path
-        };
-      });
-      await userService.patch(user._id,{roles: user.roles});
-      result.user = user;
-      if(result.user && result.user.password) delete result.user.password;
-      context.result = await buildResult.operation(result);
-    } else {
-      throw new Error('no valid user or role(s)!');
-    }
-    return context;
+  if (action === 'add-org-user'){
+    const {everyone_role} = await contextParser.parse();
+    return await buildResult.operation(await userHelper.add_user_role({role: everyone_role}));
   }
 
   if(action === 'create-org-user'){
