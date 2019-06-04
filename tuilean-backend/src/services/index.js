@@ -12,6 +12,7 @@ const notify = require('./notify/notify.service.js');
 const workflows = require('./workflows/workflows.service.js');
 const workactions = require('./workactions/workactions.service.js');
 const comments = require('./comments/comments.service.js');
+const leaves = require('./leaves/leaves.service.js');
 // eslint-disable-next-line no-unused-vars
 module.exports = function (app) {
   app.configure(users);
@@ -28,4 +29,5 @@ module.exports = function (app) {
   app.configure(workflows);
   app.configure(workactions);
   app.configure(comments);
+  app.configure(leaves);
 };

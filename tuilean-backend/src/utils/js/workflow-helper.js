@@ -729,6 +729,18 @@ module.exports = function(context, options) {
         const work = context.data && context.data.data && context.data.data.work;
         return work;
       }
+      if (action === 'add-comment'){
+        const comment = context.data.data.comment;
+        const work = context.data && context.data.data && context.data.data.work;
+        const buildResult = require('./build-result')(context,options);
+        if (comment && comment.title && work && work.work && work.workflow){
+          comment.owner = { workflow_id: work.workflow._id, work_id: work.work._id};
+          await commentHelper.addComment(comment);
+          return context.result = await buildResult.operation(await getUserWorks(binder));
+        }
+          
+        return { error: 201, message: 'fail to add comment for work, please check input!'};
+      }
     }
   };
 
