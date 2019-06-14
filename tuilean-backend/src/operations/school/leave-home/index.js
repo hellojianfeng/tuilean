@@ -1,5 +1,5 @@
 //const validateEmail = require('../../../utils/tools/validate-email');
-//const _ = require('lodash');
+const _ = require('lodash');
 module.exports = async function (context, options = {}) {
 
   //const operationData = context.data.data || {};
@@ -28,7 +28,7 @@ module.exports = async function (context, options = {}) {
     return context.result = await buildResult.operation({leave_history});
   }
 
-  if(action === 'before-create-leave'){
+  if(action === 'start-create-leave'){
     //provide template data for create leave
     const today = new Date();
     return await buildResult.operation(
@@ -55,6 +55,8 @@ module.exports = async function (context, options = {}) {
 
   if(action === 'create-leave'){
     //create a leave
+    const result = await leaveHelper.createLeave(context.data.data);
+    
   }
   
   if (action === 'do-work'){
@@ -75,8 +77,8 @@ module.exports = async function (context, options = {}) {
       await workflowHelper.next({work, next: { status: 'end'}});
     }
   
-    const assignment_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'class-assignment'});
-    return context.result = await buildResult.operation(assignment_works);
+    const leave_works = await workflowHelper.getUserWorks({operation: context.params.operation, users: [ user.email ], workflow_type:'leave-request'});
+    return context.result = await buildResult.operation(leave_works);
   }
   
   return { error: 301, message: 'not run any action!'};
