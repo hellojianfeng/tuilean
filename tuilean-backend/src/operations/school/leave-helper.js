@@ -1,27 +1,32 @@
+const _ = require('lodash');
+const objectHash = require('object-hash');
 module.exports = function(context, options) {
 
   const workflowHelper = require('../../utils/js/workflow-helper')(context,options);
+  const configHelper = require('../../utils/js/configuration-helper')(context,options);
   const leaveService = context.app.service('leaves');
 
   const user = context.params.user;
-  
+
   const createLeave = async options => {
     //return options;
     //create a leave first
-    const leaveData = options && options.leave_data;
+    let leaveData = options && options.leave_data || options;
     const start = leaveData && leaveData.start;
     const end = leaveData && leaveData.end;
 
     const parsedTime = parseLeaveTime(start, end);
-    
-    const scope = leaveData && leaveData.scope;
-    const processor = leaveData && leaveData.processor;
+
+    leaveData = Object.assign(leaveData, parsedTime);
+
+    const created = await leaveService.create(leaveData);
 
     const workflowData = {
       owner: { operation: { path: 'leave-home'}, users: [ user.email]},
       type: 'leave-request',
       path: _.uniqueId('leave_'),
       description: 'leave request by ' + user.email,
+      data: {leave: created},
       works: [
         {
           path: 'leave-created',
@@ -33,43 +38,10 @@ module.exports = function(context, options) {
               users: ['self']
             },
             {
-              path: 'completed',
-              operation: 'leave-home',
-              users: ['self']
-            }
-          ]
-        },
-        {
-          path: 'leave-updated',
-          status: 'updated',
-          actions: [
-            {
-              path: 'update',
+              path: 'cancel',
               operation: 'leave-home',
               users: ['self']
             },
-            {
-              path: 'completed',
-              operation: 'leave-home',
-              users: ['self']
-            }
-          ]
-        },
-        {
-          path: 'leave-completed',
-          status: 'completed',
-          actions: [
-            {
-              path: 'confirm',
-              operation: 'leave-home',
-              users: ['self']
-            }
-          ]
-        },
-        {
-          path: 'leave-confirmed',
-          status: 'confirmed',
-          actions: [
             {
               path: 'process',
               operation: 'leave-home',
@@ -134,7 +106,37 @@ module.exports = function(context, options) {
   const parseLeaveTime = (start, end) => {
     return { start, end};
   };
-  
-  return { createLeave, parseLeaveTime };
+
+  const findUserLeaves = options => {
+    if (options){
+      return [];
+    }
+    return [];
+  };
+
+  const addOrUpdateConfig = async options => {
+    const configs = Array.isArray(options)? options : [ options ];
+    const operation = context.params.operation;
+    configs.map ( o => {
+      o.owner = { operation: _.pick(operation, ['path','org_path'])};
+      return o;
+    });
+    return await configHelper.addOrUpdate(configs);
+  };
+
+  const getLeaveManager = async options => {
+    const configService = context.app.service('configurations');
+    const scope = options & options.scope || scope;
+    const owner = { operation: _.pick(context.params.operation, ['path','org_path'])};
+
+    if (scope){
+      owner.owner_hash = objectHash(scope);
+    }
+
+    const query = {key: 'leave_manager', owner_hash: objectHash(owner)};
+    const finds = await configService.find({query});
+    return finds.data;
+  };
+
+  return { createLeave, parseLeaveTime, findUserLeaves, addOrUpdateConfig, getLeaveManager };
 };
-  

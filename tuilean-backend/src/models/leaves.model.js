@@ -1,5 +1,5 @@
 // leaves-model.js - A mongoose model
-// 
+//
 // See http://mongoosejs.com/docs/models.html
 // for more of what you can do here.
 module.exports = function (app) {
@@ -11,6 +11,15 @@ module.exports = function (app) {
     description: { type: String },
     start: { type: Schema.Types.DateTime },
     end: { type: Schema.Types.DateTime },
+    period: {
+      years: Number,
+      months: Number,
+      weeks: Number,
+      days: Number,
+      hours: Number,
+      minutes: Number,
+      seconds: Number
+    },
     scope: { type: Schema.Types.Mixed},
     scope_hash: String,
     status: { type: String, emum: ['pending', 'approved', 'rejected']},
