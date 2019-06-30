@@ -33,9 +33,10 @@ module.exports = async function (context, options = {}) {
   if(action === 'create-leave-start'){
     //provide template data for create leave
     const today = new Date();
+
     return await buildResult.operation(
       {
-        leave_data_example: {
+        create_leave_example: {
           applicant: user.email,
           type: 'sick-leave',
           description: 'sick leave for class',
@@ -53,9 +54,8 @@ module.exports = async function (context, options = {}) {
           }
         },
         options: {
-          type: [
-            'sick-leave', 'annual-leave'
-          ]
+          types: await leaveHelper.getLeaveTypes,
+          leave_managers: await leaveHelper.getListOfLeaveManager
         }
       }
     );

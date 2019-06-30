@@ -171,6 +171,16 @@
             "path":"assignment-home",
             "app":"school",
             "roles":["student","parent","teacher"]
+          },
+          {
+            "path":"leave-admin",
+            "app":"school",
+            "roles":["admin"]
+          },
+          {
+            "path":"leave-home",
+            "app":"school",
+            "roles":["student","parent","teacher"]
           }
         ]
       }

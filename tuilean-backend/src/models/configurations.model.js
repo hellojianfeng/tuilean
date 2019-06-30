@@ -11,6 +11,8 @@ module.exports = function (app) {
     description: String,
     owner: { type: Schema.Types.Mixed },
     owner_hash: String,
+    org_id: { type: Schema.Types.ObjectId },
+    org_path: { type: String  },
     data: { type: Schema.Types.Mixed }
   }, {
     timestamps: true

@@ -9,8 +9,8 @@ module.exports = function (app) {
     type: { type: String },
     name: { type: String },
     description: { type: String },
-    start: { type: Schema.Types.DateTime },
-    end: { type: Schema.Types.DateTime },
+    start: { type: Schema.Types.Date },
+    end: { type: Schema.Types.Date },
     period: {
       years: Number,
       months: Number,
@@ -34,7 +34,7 @@ module.exports = function (app) {
     org_id: { type: Schema.Types.ObjectId },
     org_path: String,
     timeslot: { type: String },
-    date: { type: Schema.Types.Mixed}
+    data: { type: Schema.Types.Mixed}
   }, {
     timestamps: true
   });

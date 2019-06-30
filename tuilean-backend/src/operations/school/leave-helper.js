@@ -124,19 +124,17 @@ module.exports = function(context, options) {
     return await configHelper.addOrUpdate(configs);
   };
 
-  const getLeaveManager = async options => {
+  const getListOfLeaveManager = async options => {
     const configService = context.app.service('configurations');
     const scope = options & options.scope || scope;
-    const owner = { operation: _.pick(context.params.operation, ['path','org_path'])};
-
+    const query = {key: 'leave_manager', org_path: context.params.operation.org_path};
     if (scope){
-      owner.owner_hash = objectHash(scope);
+      query.owner_hash = objectHash(scope);
     }
 
-    const query = {key: 'leave_manager', owner_hash: objectHash(owner)};
     const finds = await configService.find({query});
     return finds.data;
   };
 
-  return { createLeave, parseLeaveTime, findUserLeaves, addOrUpdateConfig, getLeaveManager };
+  return { createLeave, parseLeaveTime, findUserLeaves, addOrUpdateConfig, getListOfLeaveManager };
 };
