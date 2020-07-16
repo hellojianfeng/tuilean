@@ -43,7 +43,7 @@
     "cors": "^2.8.5",
     "feathers-mongoose": "^7.0.0",
     "helmet": "^3.15.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.19",
     "mongodb": "^3.2.3",
     "mongodb-core": "^3.1.9",
     "mongoose": "^5.3.12",
