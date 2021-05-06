@@ -53,7 +53,7 @@
     "passport-github": "^1.1.0",
     "passport-google-oauth20": "^1.0.0",
     "serve-favicon": "^2.5.0",
-    "underscore": "^1.9.1",
+    "underscore": "^1.12.1",
     "winston": "^3.1.0"
   },
   "devDependencies": {
